@@ -17,6 +17,7 @@ class Staff(models.Model):
 class Menu(models.Model):
     title = models.CharField(max_length=200)
     note = models.CharField(max_length=500)
+    price = models.FloatField()
     avg_preparation_time = models.DurationField(verbose_name="Average preparation time.")
 
     def __str__(self):

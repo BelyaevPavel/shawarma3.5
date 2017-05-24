@@ -1,0 +1,16 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
+<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
+{% if order_content %}
+    <table class="currentOrderTable">
+    {% for order_item in order_content %}
+            <tr class="currentOrderRow">
+                <td class="currentOrderTitleCell">
+                    order_item.menu_item
+                </td>
+            </tr>
+    {% endfor %}
+    </table>
+{% else %}
+    <p>No menu items.</p>
+{% endif %}

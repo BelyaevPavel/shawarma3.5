@@ -1,0 +1,25 @@
+table.currentOrderTable {
+    width: 80%;
+    border-spacing: 0px;
+}
+
+td.currentOrderTitleCell {
+    border-bottom: 1pt solid black;
+    text-align: left;
+}
+
+td.currentOrderActionCell {
+    border-bottom: 1pt solid black;
+    text-align: right;
+}
+
+td.currentOrderTotalText {
+    font-weight: bold;
+    border-bottom: 1pt solid black;
+    text-align: left;
+}
+
+td.currentOrderTotalFig {
+    border-bottom: 1pt solid black;
+    text-align: right;
+}
