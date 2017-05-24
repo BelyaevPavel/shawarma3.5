@@ -18,3 +18,10 @@ def index(request):
 def order_content(request, order_id):
     orderContent = get_object_or_404(OrderContent, order=order_id)
     return render()
+
+def make_order(request):
+    id_collection = (request.POST.get("id_collector", "")).split(',')
+    del id_collection[-1]
+    cooks = Staff.objects.raw('select * from queue_staff where category == "Ck" and available == "True"')
+    
+    return HttpResponse(u"{}".format())

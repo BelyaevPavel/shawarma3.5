@@ -10,6 +10,11 @@ function Remove(index) {
     CalculateTotal();
     DrawTable();
     $('p.totalDisplay').text(total);
+    var id_string = "";
+    for (var i = 0; i < currOrder.length; i++) {
+        id_string += currOrder[i][0] + ',';
+    }
+    $('input[name=id_collector]').attr('value', id_string);
 }
 
 function Add(id, title, price) {
@@ -17,6 +22,11 @@ function Add(id, title, price) {
     CalculateTotal();
     DrawTable();
     $('p.totalDisplay').text(total);
+    var id_string = "";
+    for (var i = 0; i < currOrder.length; i++) {
+        id_string += currOrder[i][0] + ',';
+    }
+    $('input[name=id_collector]').attr('value', id_string);
 }
 
 function DrawTable() {
