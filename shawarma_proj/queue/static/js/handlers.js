@@ -4,11 +4,34 @@
 
 var currOrder = [];
 var total = 0;
+$(function () {
+        $('form#order_content').on('submit', function(event){
+            var confirmation = confirm("Confirm Order?");
+            if (confirmation==true){
+                $("#order_content").submit();
+            }
+            else {
+                event.preventDefault();
+            }
+        });
+    });
+
+
+function ConfirmOrder(e) {
+    var confirmation = confirm("Confirm Order?");
+    if (confirmation==true){
+        $("#order_content").submit();
+    }
+    else {
+        e.preventDefault();
+    }
+}
+
 function Remove(index) {
     $('tr[index="' + index + '"]').remove();
     currOrder.splice(index, 1);
     CalculateTotal();
-    DrawTable();
+    DrawOrderTable();
     $('p.totalDisplay').text(total);
     var id_string = "";
     for (var i = 0; i < currOrder.length; i++) {
@@ -20,7 +43,7 @@ function Remove(index) {
 function Add(id, title, price) {
     currOrder.push([id, title, price]);
     CalculateTotal();
-    DrawTable();
+    DrawOrderTable();
     $('p.totalDisplay').text(total);
     var id_string = "";
     for (var i = 0; i < currOrder.length; i++) {
@@ -29,7 +52,7 @@ function Add(id, title, price) {
     $('input[name=id_collector]').attr('value', id_string);
 }
 
-function DrawTable() {
+function DrawOrderTable() {
     $('table.currentOrderTable tbody tr').remove();
     for (var i = 0; i < currOrder.length; i++) {
         $('table.currentOrderTable').append(
@@ -39,6 +62,10 @@ function DrawTable() {
             '</td></tr>'
         );
     }
+}
+
+function DrawQueueTable() {
+
 }
 
 function CalculateTotal() {

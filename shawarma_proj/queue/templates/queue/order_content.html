@@ -3,10 +3,10 @@
 <script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
 {% if order_content %}
     <table class="currentOrderTable">
-    {% for order_item in order_content %}
+    {% for order_item in orderContent %}
             <tr class="currentOrderRow">
                 <td class="currentOrderTitleCell">
-                    order_item.menu_item
+                    {{ order_item.menu_item }}
                 </td>
             </tr>
     {% endfor %}

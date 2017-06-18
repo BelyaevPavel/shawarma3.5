@@ -19,7 +19,7 @@ class Menu(models.Model):
     title = models.CharField(max_length=200)
     note = models.CharField(max_length=500)
     price = models.FloatField(default=0, validators=[MinValueValidator(0, "Price can't be negative!")])
-    avg_preparation_time = models.DurationField(verbose_name="Average preparation time.", editable=False)
+    avg_preparation_time = models.DurationField(verbose_name="Average preparation time.")
 
     def __str__(self):
         return self.title
@@ -28,15 +28,15 @@ class Menu(models.Model):
 class Order(models.Model):
     daily_number = models.IntegerField(verbose_name="Daily Number", unique_for_date=True)
     open_time = models.DateTimeField(verbose_name="Open Time")
-    close_time = models.DateTimeField(verbose_name="Close Time")
-    content_completed = models.BooleanField(verbose_name="Content Completed")
-    supplement_completed = models.BooleanField(verbose_name="Supplement Completed")
-    total = models.FloatField(default=0, validators=[MinValueValidator(0, "Total can't be negative!")], editable=False)
+    close_time = models.DateTimeField(verbose_name="Close Time", null=True)
+    content_completed = models.BooleanField(verbose_name="Content Completed", default=False)
+    supplement_completed = models.BooleanField(verbose_name="Supplement Completed", default=False)
+    total = models.FloatField(default=0, validators=[MinValueValidator(0, "Total can't be negative!")])
 
 
 class OrderContent(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     menu_item = models.ForeignKey(Menu, on_delete=models.CASCADE, verbose_name="Menu Item")
-    staff_maker = models.ForeignKey(Staff, on_delete=models.CASCADE, verbose_name="Staff Maker")
-    start_timestamp = models.DateTimeField(verbose_name="Start Timestamp")
-    finish_timestamp = models.DateTimeField(verbose_name="Finish Timestamp")
+    staff_maker = models.ForeignKey(Staff, on_delete=models.CASCADE, verbose_name="Staff Maker", null=True)
+    start_timestamp = models.DateTimeField(verbose_name="Start Timestamp", null=True)
+    finish_timestamp = models.DateTimeField(verbose_name="Finish Timestamp", null=True)

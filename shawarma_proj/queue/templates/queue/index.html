@@ -5,11 +5,15 @@
     <title>Title</title>
 </head>
 <body>-->
+{% include 'queue/header.html' %}
+
 {% load static %}
 <link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
 <script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/handlers.js' %}"></script>
+
 {% if menu_items %}
+    <button class="confirmation">Confirm</button>
     <ul>
         {% for menu_item in menu_items %}
             <li>{{ menu_item.title }} {{ menu_item.price }}
@@ -37,7 +41,7 @@
         </tr>
     </tfoot>
 </table>
-<form action="/queue/make_order/" method="post">
+<form action="/queue/make_order/" method="post" id="order_content">
     {% csrf_token %}
     <input type="text" name="id_collector" value="1">
     <input type="submit" value="Make order" enable="false">
