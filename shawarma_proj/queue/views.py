@@ -3,9 +3,10 @@ from __future__ import unicode_literals
 from .models import Menu, Order, Staff, OrderContent
 from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.db.models import Max
 import datetime
+import json
 
 
 # Create your views here.
@@ -34,18 +35,33 @@ def current_queue(request):
     return HttpResponse(template.render(context, request))
 
 
+def production_queue(request):
+    free_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
+                                               order__close_time__isnull=True).order_by('order__open_time')
+    template = loader.get_template('queue/production_queue.html')
+    context = {
+        'free_content': free_content
+    }
+    return HttpResponse(template.render(context, request))
+
+
 def order_content(request, order_id):
-    orderContent = get_object_or_404(OrderContent, order=order_id)
+    order_info = get_object_or_404(Order, id=order_id)
+    current_order_content = OrderContent.objects.filter(order=order_id)
     template = loader.get_template('queue/order_content.html')
     context = {
-        'orderContent': orderContent
+        'order_info': order_info,
+        'order_content': current_order_content
     }
     return HttpResponse(template.render(context, request))
 
 
 def make_order(request):
-    id_collection = (request.POST.get("id_collector", "")).split(',')
-    del id_collection[-1]
+    print str(request.POST['order_content'])
+    content = json.loads(request.POST['order_content'])
+    data = {
+        'received': "Received {}".format(content)
+    }
     # order = Order(open_time=datetime.datetime.now(), daily_number=1)
     # order.save()
     order_next_number = 0
@@ -61,8 +77,26 @@ def make_order(request):
 
     order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number)
     order.save()
-    for ID in id_collection:
-        new_order_content = OrderContent(order=order, menu_item_id=ID)
-        new_order_content.save()
+    for item in content:
+        for i in range(0, int(item['quantity'])):
+            new_order_content = OrderContent(order=order, menu_item_id=item['id'], note=item['note'])
+            new_order_content.save()
 
-    return redirect('index')
+    return JsonResponse(data)
+
+
+def take(request):
+    product_id = request.POST.get('id', None)
+    staff_maker_id = request.POST.get('maker_id', None)
+    if product_id and staff_maker_id:
+        product = OrderContent.objects.get(pk=product_id)
+        staff_maker = Staff.objects.get(pk=staff_maker_id)
+        product.staff_maker = staff_maker
+        product.start_timestamp = datetime.datetime.now()
+        product.save()
+    data = {
+        'success': True,
+        'product_id': product_id,
+        'staff_maker_id': staff_maker_id
+    }
+    return JsonResponse(data)

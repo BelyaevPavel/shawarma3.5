@@ -32,6 +32,7 @@ class Order(models.Model):
     content_completed = models.BooleanField(verbose_name="Content Completed", default=False)
     supplement_completed = models.BooleanField(verbose_name="Supplement Completed", default=False)
     total = models.FloatField(default=0, validators=[MinValueValidator(0, "Total can't be negative!")])
+    is_canceled = models.BooleanField(verbose_name="Is canceled", default=False)
 
 
 class OrderContent(models.Model):
@@ -40,3 +41,9 @@ class OrderContent(models.Model):
     staff_maker = models.ForeignKey(Staff, on_delete=models.CASCADE, verbose_name="Staff Maker", null=True)
     start_timestamp = models.DateTimeField(verbose_name="Start Timestamp", null=True)
     finish_timestamp = models.DateTimeField(verbose_name="Finish Timestamp", null=True)
+    is_in_grill = models.BooleanField(verbose_name="Is in grill", default=False)
+    is_canceled = models.BooleanField(verbose_name="Is canceled", default=False)
+    note = models.CharField(max_length=500, default="")
+
+    def __str__(self):
+        return u"№{} {}".format(self.order, self.menu_item)

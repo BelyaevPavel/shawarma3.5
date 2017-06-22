@@ -1,22 +1,30 @@
-
-<table class="headerTable">
-    <tbody>
-    <tr>
-        <td>
-            <a href="{% url 'index' %}">
-                Main
-            </a>
-        </td>
-        <td>
-            <a href="{% url 'current_queue' %}">
-                Current Queue
-            </a>
-        </td>
-        <td>
-            <a>
-                Log Out
-            </a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
+<div class="header-div">
+    <table class="headerTable">
+        <tbody>
+        <tr>
+            <td>
+                <a href="{% url 'index' %}">
+                    Main
+                </a>
+            </td>
+            <td>
+                <a href="{% url 'current_queue' %}">
+                    Current Queue
+                </a>
+            </td>
+            <td>
+                <a href="{% url 'production_queue' %}">
+                    Production
+                </a>
+            </td>
+            <td>
+                <a>
+                    Log Out
+                </a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

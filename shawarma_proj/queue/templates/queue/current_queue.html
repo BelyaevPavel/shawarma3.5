@@ -22,8 +22,7 @@
                 {% for order in open_orders %}
                     <tr class="currentOrderRow">
                         <td class="currentOrderTitleCell">
-                            <a href="{% q %}"
-                            {{ order.daily_number }}
+                            <a href="{% url 'order_content' order_id=order.id %}">{{ order.daily_number }}</a>
                         </td>
                     </tr>
                 {% endfor %}

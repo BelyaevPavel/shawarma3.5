@@ -1,0 +1,48 @@
+{% include 'queue/header.html' %}
+{% csrf_token %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
+<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/handlers.js' %}"></script>
+<div>
+    <table class="currentOrderTable" id="free-items" data-take-url="{% url 'take' %}">
+        <thead>
+            <tr>
+                <td>
+                    Title
+                </td>
+                <td>
+                    Note
+                </td>
+                <td>
+                    Actions
+                </td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in free_content %}
+                {% include 'queue/order_item.html' with item=item %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div>
+    <table class="currentOrderTable" id="items-grill">
+        <thead>
+            <tr>
+                <td>
+                    Title
+                </td>
+                <td>
+                    Note
+                </td>
+                <td>
+                    Actions
+                </td>
+            </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</div>

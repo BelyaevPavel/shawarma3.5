@@ -1,0 +1,15 @@
+<tr class="currentOrderRow {% if item.staff_maker_id %}inProduction{% endif %}" index="{{ item.id }}">
+    <td class="currentOrderTitleCell">
+        {{ item.menu_item }}
+    </td>
+    <td class="currentOrderTitleCell">
+        {{ item.note }}
+    </td>
+    <td class="currentOrderActionCell">
+        <button class="btnTake" onclick="Take({{ item.id }})" {% if item.staff_maker_id %}disabled{% endif %}>
+            Take
+        </button>
+        <button class="btnGrill" onclick="Remove({{ item.id }})">Grill</button>
+        <button class="btnFinish" onclick="Remove({{ item.id }})">Finish</button>
+    </td>
+</tr>

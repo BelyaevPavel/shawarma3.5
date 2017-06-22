@@ -1,6 +1,14 @@
 table.currentOrderTable {
-    width: 80%;
+    width: 100%;
     border-spacing: 0px;
+}
+
+table.headerTable {
+    width: 100%;
+}
+
+table.currentQueueTable {
+    width: 100%;
 }
 
 td.currentOrderTitleCell {
@@ -22,4 +30,51 @@ td.currentOrderTotalText {
 td.currentOrderTotalFig {
     border-bottom: 1pt solid black;
     text-align: right;
+}
+
+td.itemMaker {
+    border-bottom: 1pt solid black;
+    text-align: center;
+    column-span: 2;
+}
+
+td.item {
+    border-bottom: 1pt solid black;
+    text-align: left;
+}
+
+.inProduction {
+    background-color: orange;
+}
+
+.inGrill {
+    background-color: brown;
+}
+
+.ready {
+    background-color: green;
+}
+
+div.menu-div {
+    width: 19%;
+    height: 100%;
+    float: left;
+    background-color: rgba(189, 255, 202, 0.63);
+}
+div.order-div {
+    width: 81%;
+    float: right;
+}
+
+div.header-div {
+    width: 100%;
+    background-color: rgba(189, 255, 202, 0.63);
+}
+
+input.quantityInput {
+    width: 50px;
+}
+
+p.noteText {
+    font-size: small;
 }

@@ -1,36 +1,17 @@
-<!--<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>-->
 {% include 'queue/header.html' %}
-
+{% csrf_token %}
 {% load static %}
 <link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
 <script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/handlers.js' %}"></script>
-
-{% if menu_items %}
-    <button class="confirmation">Confirm</button>
-    <ul>
-        {% for menu_item in menu_items %}
-            <li>{{ menu_item.title }} {{ menu_item.price }}
-                <button class="btnAdd" onclick="Add({{ menu_item.id }}, '{{ menu_item.title }}', {{ menu_item.price }})">
-                    +
-                </button>
-            </li>
-        {% endfor %}
-
-    </ul>
-{% else %}
-    <p>No menu items.</p>
-{% endif %}
-<table class="currentOrderTable">
-    <thead>Order content</thead>
-    <tbody></tbody>
-    <tfoot>
+<div class="menu-div">
+    {% include 'queue/menu.html' with menu_items=menu_items %}
+</div>
+<div class="order-div">
+    <table class="currentOrderTable">
+        <thead>Order content</thead>
+        <tbody></tbody>
+        <tfoot>
         <tr>
             <td class="currentOrderTotalText">
                 Total
@@ -39,12 +20,14 @@
                 <p class="totalDisplay"></p>
             </td>
         </tr>
-    </tfoot>
-</table>
-<form action="/queue/make_order/" method="post" id="order_content">
-    {% csrf_token %}
-    <input type="text" name="id_collector" value="1">
-    <input type="submit" value="Make order" enable="false">
-</form>
-<!--</body>
-</html>-->
+        <tr>
+            <button class="subm" data-send-url="{% url 'make_order' %}">
+                Submit
+            </button>
+        </tr>
+        </tfoot>
+    </table>
+</div>
+<footer>
+    <p class="response"></p>
+</footer>

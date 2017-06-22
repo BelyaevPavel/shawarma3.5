@@ -1,0 +1,24 @@
+<table>
+    <thead>
+    <tr>
+        <td>
+            Title
+        </td>
+        <td>
+            Price
+        </td>
+        <td>
+            Quantity
+        </td>
+    </tr>
+    </thead>
+    <tbody>
+    {% if menu_items %}
+        {% for menu_item in menu_items %}
+            {% include "queue/menu_item.html" with menu_item=menu_item %}
+        {% endfor %}
+    {% else %}
+        <p>No menu items.</p>
+    {% endif %}
+    </tbody>
+</table>
