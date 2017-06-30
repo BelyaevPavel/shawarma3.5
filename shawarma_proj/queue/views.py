@@ -4,12 +4,14 @@ from .models import Menu, Order, Staff, OrderContent
 from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Max
 import datetime
 import json
 
 
 # Create your views here.
+@login_required()
 def index(request):
     menu_items = Menu.objects.order_by('price')
     template = loader.get_template('queue/index.html')
@@ -19,6 +21,7 @@ def index(request):
     return HttpResponse(template.render(context, request))
 
 
+@login_required()
 def current_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True).order_by(
         'open_time')
@@ -35,6 +38,7 @@ def current_queue(request):
     return HttpResponse(template.render(context, request))
 
 
+@login_required()
 def production_queue(request):
     free_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
                                                order__close_time__isnull=True).order_by('order__open_time')
@@ -45,6 +49,8 @@ def production_queue(request):
     return HttpResponse(template.render(context, request))
 
 
+@login_required()
+@permission_required('queue.change_order')
 def order_content(request, order_id):
     order_info = get_object_or_404(Order, id=order_id)
     current_order_content = OrderContent.objects.filter(order=order_id)
@@ -56,6 +62,8 @@ def order_content(request, order_id):
     return HttpResponse(template.render(context, request))
 
 
+@login_required()
+@permission_required('queue.add_order')
 def make_order(request):
     print str(request.POST['order_content'])
     content = json.loads(request.POST['order_content'])
@@ -84,7 +92,7 @@ def make_order(request):
 
     return JsonResponse(data)
 
-
+@login_required()
 def take(request):
     product_id = request.POST.get('id', None)
     staff_maker_id = request.POST.get('maker_id', None)

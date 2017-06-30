@@ -31,7 +31,9 @@ $(function () {
                     CalculateTotal();
                 }
             }
-            );
+            ).fail(function () {
+                    alert('You have no permission!');
+                });
         }
         else {
             event.preventDefault();
