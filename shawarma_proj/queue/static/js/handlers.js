@@ -55,6 +55,8 @@ function Remove(index) {
 function Add(id, title, price) {
     var quantity = $('#count-'+id).val();
     var note = $('#note-'+id).val();
+    $('#note-'+id).val('');
+    $('#count-'+id).val('1');
     var index = FindItem(id, note);
     if (index == null){
         currOrder.push(
@@ -72,6 +74,34 @@ function Add(id, title, price) {
     }
     CalculateTotal();
     DrawOrderTable();
+}
+
+function CloseOrder(order_id) {
+    var confirmation = confirm("Close Order?");
+    if (confirmation == true) {
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken)
+            }
+        });
+        $.ajax({
+            type: 'POST',
+            url: form.attr('data-send-url'),
+            data: {"order_id": order_id},
+            dataType: 'json',
+            success: function (data) {
+                alert('Success! ' + data.received);
+                $('.response').text();
+                res = data.received;
+            }
+        }
+        ).fail(function () {
+                alert('You have no permission!');
+            });
+    }
+    else {
+        event.preventDefault();
+    }
 }
 
 function FindItem(id, note) {
@@ -93,7 +123,7 @@ function DrawOrderTable() {
     for (var i = 0; i < currOrder.length; i++) {
         $('table.currentOrderTable').append(
             '<tr class="currentOrderRow" index="' + i + '"><td class="currentOrderTitleCell">' +
-            '<p>'+currOrder[i]['title'] + '</p><p class="noteText">'+currOrder[i]['note']+'</p>'+
+            '<div>'+currOrder[i]['title'] + '</div><div class="noteText">'+currOrder[i]['note']+'</div>'+
             '</td><td class="currentOrderActionCell">' +'x'+currOrder[i]['quantity']+
             '<input type="text" value="1" class="quantityInput" id="count-to-remove-' + i + '">' +
             '<button class="btnRemove" onclick="Remove(' + i + ')">Depricate</button>' +
@@ -127,8 +157,7 @@ function Take(id) {
         type: 'POST',
         url: url,
         data: {
-            'id': id,
-            'maker_id': 1
+            'id': id
         },
         dataType: 'json',
         success: function (data) {
@@ -140,11 +169,49 @@ function Take(id) {
 }
 
 function ToGrill(id) {
-    $('table#items-grill tbody').append(
-        '<tr class="currentOrderRow" index="' + i + '"><td class="currentOrderTitleCell">' +
-        '<p>' + currOrder[i]['title'] + '</p><p class="noteText">' + currOrder[i]['note'] + '</p>' +
-        '</td><td class="currentOrderActionCell">' + 'x' + currOrder[i]['quantity'] +
-        '<input type="text" value="1" class="quantityInput" id="count-to-remove-' + i + '">' +
-        '<button class="btnRemove" onclick="Remove(' + i + ')">Depricate</button>' +
-        '</td></tr>');
+    var row = $('[index=' + id + ']');
+    var url = $('#free-items').attr('data-grill-url');
+    console.log(id + ' ' + url);
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken)
+        }
+    });
+    $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+            'id': id
+        },
+        dataType: 'json',
+        success: function (data) {
+            alert('Success!' + data);
+            row.addClass('inProduction');
+            $('[index=' + id + '] button.btnGrill').prop('disabled', true);
+        }
+    });
+}
+
+function FinishCooking(id) {
+    var row = $('[index=' + id + ']');
+    var url = $('#free-items').attr('data-finish-url');
+    console.log(id + ' ' + url);
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken)
+        }
+    });
+    $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+            'id': id
+        },
+        dataType: 'json',
+        success: function (data) {
+            alert('Success!' + data);
+            row.addClass('inProduction');
+            $('[index=' + id + '] button.btnFinish').prop('disabled', true);
+        }
+    });
 }

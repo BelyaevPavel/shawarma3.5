@@ -1,49 +1,48 @@
-{% include 'queue/header.html' %}
-{% load static %}
-<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
-<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
-<table class="currentOrderTable">
-    <thead>
-    {% if order_info %}
-        <tr>
-            <td>
-                №: {{ order_info.daily_number }}
-            </td>
-            <td>
-                Opened: {{ order_info.open_time }}
-            </td>
-            <td>
-                Closed: {{ order_info.close_time }}
-            </td>
-        </tr>
-    {% endif %}
-    </thead>
-    <tbody>
-    {% if order_content %}
-        {% for order_item in order_content %}
-            <tr class="currentOrderRow">
-                <td class="item ready">
-                    <p>
-                        {{ order_item.menu_item }}
-                    </p>
-                    <p class="noteText">
-                        {{ order_item.note }}
-                    </p>
+{% extends 'queue/base.html' %}
+{% block content %}
+    <table class="currentOrderTable">
+        <thead>
+        {% if order_info %}
+            <tr>
+                <td>
+                    №: {{ order_info.daily_number }}
                 </td>
-                <td class="itemMaker inGrill">
-                    {{ order_item.staff_maker }}
+                <td>
+                    Opened: {{ order_info.open_time }}
                 </td>
-                <td class="currentOrderActionCell">
-                    <button class="btnRemove">
-                        Remove
-                    </button>
+                <td>
+                    Closed: {{ order_info.close_time }}
                 </td>
             </tr>
-        {% endfor %}
-    {% else %}
-        <tr>
-            No menu items.
-        </tr>
-    {% endif %}
-    </tbody>
-</table>
+        {% endif %}
+        </thead>
+        <tbody>
+        {% if order_content %}
+            {% for order_item in order_content %}
+                <tr class="currentOrderRow">
+                    <td class="item ready">
+                        <p>
+                            {{ order_item.menu_item }}
+                        </p>
+                        <p class="noteText">
+                            {{ order_item.note }}
+                        </p>
+                    </td>
+                    <td class="itemMaker inGrill">
+                        {{ order_item.staff_maker }}
+                    </td>
+                    <td class="currentOrderActionCell">
+                        <button class="btnRemove">
+                            Remove
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                No menu items.
+            </tr>
+        {% endif %}
+        </tbody>
+    </table>
+{% endblock %}

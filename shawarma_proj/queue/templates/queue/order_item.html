@@ -9,7 +9,7 @@
         <button class="btnTake" onclick="Take({{ item.id }})" {% if item.staff_maker_id %}disabled{% endif %}>
             Take
         </button>
-        <button class="btnGrill" onclick="Remove({{ item.id }})">Grill</button>
-        <button class="btnFinish" onclick="Remove({{ item.id }})">Finish</button>
+        <button class="btnGrill" onclick="ToGrill({{ item.id }})" {% if item.is_in_grill %}disabled{% endif %}>Grill</button>
+        <button class="btnFinish" onclick="FinishCooking({{ item.id }})" {% if item.finish_timestamp %}disabled{% endif %}>Finish</button>
     </td>
 </tr>

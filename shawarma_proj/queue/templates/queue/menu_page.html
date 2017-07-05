@@ -1,0 +1,37 @@
+{% extends "queue/base.html" %}
+<title>Make Order</title>
+{% block content %}
+    <div class="menu-div">
+        {% include 'queue/menu.html' with menu_items=menu_items %}
+    </div>
+    <div class="order-div">
+        <table class="currentOrderTable">
+            <thead>Order content</thead>
+            <tbody></tbody>
+            <tfoot>
+            <tr>
+                <td class="currentOrderTotalText">
+                    <div>
+                        Total
+                    </div>
+                </td>
+                <td class="currentOrderTotalFig">
+                    <div>
+                        <p class="totalDisplay">
+
+                        </p>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <button class="subm" data-send-url="{% url 'make_order' %}">
+                    Submit
+                </button>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+    <footer>
+        <p class="response"></p>
+    </footer>
+{% endblock %}

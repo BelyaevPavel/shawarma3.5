@@ -1,19 +1,19 @@
-<tr>
-    <td class="currentOrderTitleCell">
-        {{ menu_item.title }}
-    </td>
-    <td class="currentOrderTitleCell">
-        {{ menu_item.price }}
-    </td>
-    <td class="currentOrderActionCell">
-        <input type="text" class="quantityInput" id="count-{{ menu_item.id }}" value="1">
-        <button class="btnAdd" onclick="Add({{ menu_item.id }}, '{{ menu_item.title }}', {{ menu_item.price }})">
-            Add
-        </button>
-    </td>
-</tr>
-<tr>
-    <td class="currentOrderTitleCell" colspan="3">
+<div class="menu-item">
+    <div class="menu-item-details">
+        <div class="menu-item-title">
+            {{ menu_item.title }}
+        </div>
+        <div class="menu-item-price">
+            {{ menu_item.price }}
+        </div>
+        <div class="menu-item-actions">
+            <input type="text" class="quantityInput" id="count-{{ menu_item.id }}" value="1">
+            <button class="btnAdd" onclick="Add({{ menu_item.id }}, '{{ menu_item.title }}', {{ menu_item.price }})">
+                Add
+            </button>
+        </div>
+    </div>
+    <div class="menu-item-note">
         <input type="text" class="noteInput" id="note-{{ menu_item.id }}" placeholder="Note">
-    </td>
-</tr>
+    </div>
+</div>

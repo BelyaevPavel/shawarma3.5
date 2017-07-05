@@ -1,30 +1,27 @@
-{% load static %}
-<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
-<div class="header-div">
-    <table class="headerTable">
-        <tbody>
-        <tr>
-            <td>
-                <a href="{% url 'index' %}">
-                    Main
-                </a>
-            </td>
-            <td>
-                <a href="{% url 'current_queue' %}">
+<div class="header-div-container fixed">
+    <div class="header-div">
+        <a href="{% url 'menu' %}">
+            <div class="header-buttons">
+                    Menu
+            </div>
+        </a>
+        <a href="{% url 'current_queue' %}">
+            <div class="header-buttons">
                     Current Queue
-                </a>
-            </td>
-            <td>
-                <a href="{% url 'production_queue' %}">
+            </div>
+        </a>
+        <a href="{% url 'production_queue' %}">
+            <div class="header-buttons">
                     Production
-                </a>
-            </td>
-            <td>
-                <a href="{% url 'logout' %}">
+            </div>
+        </a>
+        <div class="header-who-logged">
+            Logged as {{ user.first_name }} {{ user.last_name }}
+        </div>
+        <a href="{% url 'logout' %}">
+            <div class="header-buttons">
                     Log Out
-                </a>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+            </div>
+        </a>
+    </div>
 </div>
