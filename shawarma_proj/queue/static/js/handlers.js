@@ -7,6 +7,8 @@ var total = 0;
 var res = ""
 var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 
+$('.next-to-prepare-item').on
+
 $(function () {
     $('.subm').on('click', function (event) {
         var confirmation = confirm("Confirm Order?");
@@ -74,34 +76,6 @@ function Add(id, title, price) {
     }
     CalculateTotal();
     DrawOrderTable();
-}
-
-function CloseOrder(order_id) {
-    var confirmation = confirm("Close Order?");
-    if (confirmation == true) {
-        $.ajaxSetup({
-            beforeSend: function (xhr, settings) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken)
-            }
-        });
-        $.ajax({
-            type: 'POST',
-            url: form.attr('data-send-url'),
-            data: {"order_id": order_id},
-            dataType: 'json',
-            success: function (data) {
-                alert('Success! ' + data.received);
-                $('.response').text();
-                res = data.received;
-            }
-        }
-        ).fail(function () {
-                alert('You have no permission!');
-            });
-    }
-    else {
-        event.preventDefault();
-    }
 }
 
 function FindItem(id, note) {

@@ -5,7 +5,8 @@ from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Max, Count
+from django.db.models import Max, Count, Avg, F
+from hashlib import md5
 import datetime
 import json
 
@@ -48,6 +49,31 @@ def current_queue(request):
 
 
 @login_required()
+def current_queue_ajax(request):
+    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True).order_by(
+        'open_time')
+    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), content_completed=True).order_by(
+        'open_time')
+
+    template = loader.get_template('queue/current_queue_grid_ajax.html')
+    context = {
+        'open_orders': [{'order': open_order,
+                         'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='cook').filter(
+                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                         'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                         'operator_part': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='operator')
+                         } for open_order in open_orders],
+        'ready_orders': ready_orders,
+        'open_length': len(open_orders),
+        'ready_length': len(ready_orders)
+    }
+    return HttpResponse(template.render(context, request))
+
+
+@login_required()
 def production_queue(request):
     free_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
                                                order__close_time__isnull=True,
@@ -58,6 +84,58 @@ def production_queue(request):
     context = {
         'free_content': free_content
     }
+    return HttpResponse(template.render(context, request))
+
+
+def cook_interface(request):
+    user = request.user
+    user_avg_prep_duration = OrderContent.objects.filter(staff_maker__user=user, start_timestamp__isnull=False,
+                                                         finish_timestamp__isnull=False).values(
+        'menu_item__id').annotate(
+        production_duration=Avg(F('finish_timestamp') - F('start_timestamp'))).order_by('production_duration')
+    print user_avg_prep_duration
+    available_cook_count = Staff.objects.filter(available=True, staff_category__title__iexact='cook').aggregate(
+        Count('id'))  # Change to logged.
+    print available_cook_count['id__count']
+    free_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
+                                               order__close_time__isnull=True,
+                                               menu_item__can_be_prepared_by__title__iexact='cook',
+                                               start_timestamp__isnull=True).order_by(
+        'order__open_time')[:available_cook_count['id__count']]
+    print free_content
+    in_progress_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
+                                                      order__close_time__isnull=True,
+                                                      start_timestamp__isnull=False,
+                                                      finish_timestamp__isnull=True,
+                                                      staff_maker__user=user,
+                                                      is_in_grill=False,
+                                                      is_canceled=False).order_by(
+        'order__open_time')[:1]
+    print in_progress_content
+    if len(free_content) > 0 and len(in_progress_content) == 0:
+        free_content_ids = [content.id for content in free_content]
+        id_to_prepare = -1
+        for product in user_avg_prep_duration:
+            if product['menu_item__id'] in free_content_ids:
+                id_to_prepare = product['menu_item__id']
+                break
+
+        if id_to_prepare == -1:
+            id_to_prepare = free_content_ids[0]
+
+        context = {
+            'next_product': OrderContent.objects.get(id=id_to_prepare),
+            'in_progress': None
+        }
+
+    else:
+        context = {
+            'next_product': None,
+            'in_progress': in_progress_content[0]
+        }
+
+    template = loader.get_template('queue/cook_interface.html')
+
     return HttpResponse(template.render(context, request))
 
 
