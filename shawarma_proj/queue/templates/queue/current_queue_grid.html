@@ -1,7 +1,7 @@
 {% extends 'queue/base.html' %}
 {% block aditional_static %}
-{% load static %}
-<script type="text/javascript" src="{% static 'js/current_queue_handlers.js' %}"></script>
+    {% load static %}
+    <script type="text/javascript" src="{% static 'js/current_queue_handlers.js' %}"></script>
 {% endblock %}
 {% block content %}
     <input hidden value="{% url 'close_order' %}">

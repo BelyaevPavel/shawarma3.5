@@ -166,26 +166,26 @@ function ToGrill(id) {
     });
 }
 
-function FinishCooking(id) {
-    var row = $('[index=' + id + ']');
-    var url = $('#free-items').attr('data-finish-url');
-    console.log(id + ' ' + url);
-    $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
-            xhr.setRequestHeader("X-CSRFToken", csrftoken)
-        }
-    });
-    $.ajax({
-        type: 'POST',
-        url: url,
-        data: {
-            'id': id
-        },
-        dataType: 'json',
-        success: function (data) {
-            alert('Success!' + data);
-            row.addClass('inProduction');
-            $('[index=' + id + '] button.btnFinish').prop('disabled', true);
-        }
-    });
-}
+// function FinishCooking(id) {
+//     var row = $('[index=' + id + ']');
+//     var url = $('#free-items').attr('data-finish-url');
+//     console.log(id + ' ' + url);
+//     $.ajaxSetup({
+//         beforeSend: function (xhr, settings) {
+//             xhr.setRequestHeader("X-CSRFToken", csrftoken)
+//         }
+//     });
+//     $.ajax({
+//         type: 'POST',
+//         url: url,
+//         data: {
+//             'id': id
+//         },
+//         dataType: 'json',
+//         success: function (data) {
+//             alert('Success!' + data);
+//             row.addClass('inProduction');
+//             $('[index=' + id + '] button.btnFinish').prop('disabled', true);
+//         }
+//     });
+// }

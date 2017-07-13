@@ -1,24 +1,40 @@
+{% load static %}
+<script type="text/javascript" src="{% static 'js/header_handlers.js' %}"></script>
+
 <div class="header-div-container fixed">
     <div class="header-div">
-        <a href="{% url 'menu' %}">
-            <div class="header-buttons">
-                    Menu
-            </div>
-        </a>
-        <a href="{% url 'current_queue' %}">
-            <div class="header-buttons">
-                    Current Queue
-            </div>
-        </a>
-        <a href="{% url 'production_queue' %}">
-            <div class="header-buttons">
-                    Production
-            </div>
-        </a>
-        <div class="header-who-logged">
+        {% if staff_category.title == 'Cashier' %}
+            <a href="{% url 'menu' %}">
+                <div class="header-buttons" id="menu">
+                        Menu
+                </div>
+            </a>
+        {% endif %}
+        {% if staff_category.title == 'Cashier' or staff_category.title == 'Operator' %}
+            <a href="{% url 'current_queue' %}">
+                <div class="header-buttons" id="current-queue">
+                        Current Queue
+                </div>
+            </a>
+        {% endif %}
+        {% if staff_category.title == 'Operator' %}
+            <a href="{% url 'production_queue' %}" id="production">
+                <div class="header-buttons">
+                        Production
+                </div>
+            </a>
+        {% endif %}
+        {% if staff_category.title == 'Cook' %}
+            <a href="{% url 'cook_interface' %}" id="cook_interface">
+                <div class="header-buttons">
+                        Cook Interface
+                </div>
+            </a>
+        {% endif %}
+        <div class="header-who-logged" id="header-who-logged">
             Logged as {{ user.first_name }} {{ user.last_name }}
         </div>
-        <a href="{% url 'logout' %}">
+        <a href="{% url 'logout' %}" id="logout">
             <div class="header-buttons">
                     Log Out
             </div>

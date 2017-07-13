@@ -57,6 +57,7 @@ class OrderContent(models.Model):
     menu_item = models.ForeignKey(Menu, on_delete=models.CASCADE, verbose_name="Menu Item")
     staff_maker = models.ForeignKey(Staff, on_delete=models.CASCADE, verbose_name="Staff Maker", null=True)
     start_timestamp = models.DateTimeField(verbose_name="Start Timestamp", null=True)
+    grill_timestamp = models.DateTimeField(verbose_name="Grill Start Timestamp", null=True)
     finish_timestamp = models.DateTimeField(verbose_name="Finish Timestamp", null=True)
     is_in_grill = models.BooleanField(verbose_name="Is in grill", default=False)
     is_canceled = models.BooleanField(verbose_name="Is canceled", default=False)

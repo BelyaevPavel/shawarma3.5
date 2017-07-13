@@ -229,7 +229,6 @@ div.next-to-prepare-item {
     width: 100%;
     height: 100%;
     font-size: xx-large;
-    line-height: 7;
     text-align: center;
     background-color: #4cb445;
     box-shadow: 0px 0px 50px 3px rgba(0, 0, 0, 0.5);
@@ -279,6 +278,18 @@ div.in-grill-slot {
     text-align: center;
     font-size: medium;
     box-shadow: inset 0px 0px 22px 1px rgba(0, 0, 0, 0.25);
+}
+
+div.item-title {
+    width: 100%;
+    height: 70%;
+    font-size: xx-large;
+}
+
+div.item-note {
+    width: 100%;
+    height: 30%;
+    font-size: large;
 }
 
 span.item-span {

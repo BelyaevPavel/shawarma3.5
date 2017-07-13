@@ -5,7 +5,7 @@ $(document).ready(function refresher() {
     $.ajax({
         url: 'ajax/current_queue_ajax.html',
         success: function (data) {
-            $('div.content').html(data);
+            $('div.content').html(data['html']);
         },
         complete: function () {
             setTimeout(refresher, 10000);

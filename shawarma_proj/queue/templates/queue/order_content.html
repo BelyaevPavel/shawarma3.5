@@ -1,5 +1,11 @@
 {% extends 'queue/base.html' %}
+{% block aditional_static %}
+    {% load static %}
+    <script type="text/javascript" src="{% static 'js/order_content_handlers.js' %}"></script>
+{% endblock %}
 {% block content %}
+    <input hidden id="urls" data-cancel-item-url="{% url 'cancel_item' %}" data-ready-url="{% url 'ready_order' %}"
+           data-cancel-order-url="{% url 'cancel_order' %}" data-finish-item-url="{%  url 'finish_supplement' %}">
     <table class="currentOrderTable">
         <thead>
         {% if order_info %}
@@ -20,7 +26,7 @@
         {% if order_content %}
             {% for order_item in order_content %}
                 <tr class="currentOrderRow">
-                    <td class="item ready">
+                    <td class="item">
                         <p>
                             {{ order_item.menu_item }}
                         </p>
@@ -28,12 +34,17 @@
                             {{ order_item.note }}
                         </p>
                     </td>
-                    <td class="itemMaker inGrill">
+                    <td class="itemMaker">
                         {{ order_item.staff_maker }}
                     </td>
                     <td class="currentOrderActionCell">
-                        <button class="btnRemove">
-                            Remove
+                        {% if order_item.menu_item.can_be_prepared_by.title == 'Operator' %}
+                            <button onclick="FinishCooking({{ order_item.id }})">
+                                Finish
+                            </button>
+                        {% endif %}
+                        <button onclick="CancelItem({{ order_item.id }})">
+                            Cancel
                         </button>
                     </td>
                 </tr>
@@ -45,4 +56,5 @@
         {% endif %}
         </tbody>
     </table>
+    <button onclick="ReadyOrder({{ order_info.id }})" {% if not ready %}disabled{% endif %}>Ready</button>
 {% endblock %}
