@@ -2,6 +2,7 @@
  * Created by paul on 13.07.17.
  */
 $(document).ready(function () {
+    console.log('ready');
     AdjustElements();
 });
 $(window).resize(AdjustElements);
@@ -12,6 +13,6 @@ function AdjustElements() {
     var who_logged = $('#header-who-logged');
     var window_width = $(window).width();
     var window_height = $(window).height();
-    var buttons_width = (window_width - who_logged.width()) / header_buttons_count;
+    var buttons_width = (window_width - who_logged.width()) / header_buttons_count-5;
     header_buttons.width(buttons_width);
 }

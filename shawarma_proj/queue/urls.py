@@ -2,7 +2,8 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
-    url(r'^$', views.menu, name='menu'),
+    url(r'^$', views.welcomer, name='welcomer'),
+    url(r'^menu', views.menu, name='menu'),
     url(r'^order/(?P<order_id>[0-9]+)/$', views.order_content, name="order_content"),
     url(r'^ajax/make_order', views.make_order, name="make_order"),
     url(r'^ajax/close_order', views.close_order, name="close_order"),

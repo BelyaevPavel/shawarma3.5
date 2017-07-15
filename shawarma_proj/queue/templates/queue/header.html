@@ -18,15 +18,15 @@
             </a>
         {% endif %}
         {% if staff_category.title == 'Operator' %}
-            <a href="{% url 'production_queue' %}" id="production">
-                <div class="header-buttons">
+            <a href="{% url 'production_queue' %}">
+                <div class="header-buttons" id="production">
                         Production
                 </div>
             </a>
         {% endif %}
         {% if staff_category.title == 'Cook' %}
-            <a href="{% url 'cook_interface' %}" id="cook_interface">
-                <div class="header-buttons">
+            <a href="{% url 'cook_interface' %}">
+                <div class="header-buttons" id="cook_interface">
                         Cook Interface
                 </div>
             </a>
@@ -34,8 +34,8 @@
         <div class="header-who-logged" id="header-who-logged">
             Logged as {{ user.first_name }} {{ user.last_name }}
         </div>
-        <a href="{% url 'logout' %}" id="logout">
-            <div class="header-buttons">
+        <a href="{% url 'logout' %}">
+            <div class="header-buttons" id="logout">
                     Log Out
             </div>
         </a>

@@ -1,5 +1,9 @@
 {% extends "queue/base.html" %}
 <title>Make Order</title>
+{% block aditional_static %}
+    {% load static %}
+    <script type="text/javascript" src="{% static 'js/menu_handlers.js' %}"></script>
+{% endblock %}
 {% block content %}
     <div class="menu-div">
         {% include 'queue/menu.html' with menu_items=menu_items %}

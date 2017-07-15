@@ -22,6 +22,15 @@ def redirection(request):
 
 # Create your views here.
 @login_required()
+def welcomer(request):
+    template = loader.get_template('queue/welcomer.html')
+    context = {
+        'staff_category': StaffCategory.objects.get(staff__user=request.user),
+    }
+    return HttpResponse(template.render(context, request))
+
+
+@login_required()
 def menu(request):
     menu_items = Menu.objects.order_by('price')
     template = loader.get_template('queue/menu_page.html')

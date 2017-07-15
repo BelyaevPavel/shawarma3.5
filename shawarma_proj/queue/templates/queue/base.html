@@ -1,10 +1,8 @@
-{% include 'queue/header.html' with staff_category=staff_category %}
 {% csrf_token %}
 {% load static %}
 <link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
 <script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/handlers.js' %}"></script>
-
+{% include 'queue/header.html' with staff_category=staff_category %}
 <div class="page-content">
 {% block content %}
     There is nothing!

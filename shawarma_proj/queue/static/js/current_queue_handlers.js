@@ -1,7 +1,13 @@
 /**
  * Created by paul on 10.07.17.
  */
-$(document).ready(function refresher() {
+$(document).ready( function () {
+    $('#current-queue').addClass('active');
+    refresher();
+}
+);
+
+function refresher() {
     $.ajax({
         url: 'ajax/current_queue_ajax.html',
         success: function (data) {
@@ -9,10 +15,9 @@ $(document).ready(function refresher() {
         },
         complete: function () {
             setTimeout(refresher, 10000);
-            console.log('Refreshed.')
         }
     });
-});
+}
 
 function CloseOrder(order_id) {
     var confirmation = confirm("Close Order?");
@@ -23,19 +28,19 @@ function CloseOrder(order_id) {
             }
         });
         $.ajax({
-            type: 'POST',
-            url: form.attr('data-send-url'),
-            data: {"order_id": order_id},
-            dataType: 'json',
-            success: function (data) {
-                alert('Success! ' + data.received);
-                $('.response').text();
-                res = data.received;
+                type: 'POST',
+                url: form.attr('data-send-url'),
+                data: {"order_id": order_id},
+                dataType: 'json',
+                success: function (data) {
+                    alert('Success! ' + data.received);
+                    $('.response').text();
+                    res = data.received;
+                }
             }
-        }
         ).fail(function () {
-                alert('You have no permission!');
-            });
+            alert('You have no permission!');
+        });
     }
     else {
         event.preventDefault();
