@@ -12,6 +12,9 @@ class StaffCategory(models.Model):
     def __str__(self):
         return u"{}".format(self.title)
 
+    def __unicode__(self):
+        return u"{}".format(self.title)
+
 
 class Staff(models.Model):
     staff_category = models.ForeignKey(StaffCategory)
@@ -19,6 +22,9 @@ class Staff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):
+        return u"{} {} {}".format(self.staff_category, self.user.first_name, self.user.last_name)
+
+    def __unicode__(self):
         return u"{} {} {}".format(self.staff_category, self.user.first_name, self.user.last_name)
 
 
@@ -30,6 +36,9 @@ class Menu(models.Model):
     can_be_prepared_by = models.ForeignKey(StaffCategory)
 
     def __str__(self):
+        return u"{}".format(self.title)
+
+    def __unicode__(self):
         return u"{}".format(self.title)
 
 
@@ -65,6 +74,9 @@ class OrderContent(models.Model):
     note = models.CharField(max_length=500, default="")
 
     def __str__(self):
+        return u"№{} {}".format(self.order, self.menu_item)
+
+    def __unicode__(self):
         return u"№{} {}".format(self.order, self.menu_item)
 
     class Meta:

@@ -18,7 +18,7 @@
                         </div>
                         <div class="order-block-actions">
                             <button {% if open_order.cook_part_count.count != open_order.cook_part_ready_count.count %}disabled{% endif %} onclick="CloseOrder({{ open_order.order.id }})">
-                                Close
+                                Закрыть
                             </button>
                         </div>
                     </div>
@@ -29,18 +29,18 @@
                                 {{ oper_content.menu_item.title }}
                             </div>
                         {% empty %}
-                            <p>no operator part.</p>
+                            <p>Нет доп. товаров.</p>
                         {% endfor %}
                     </div>
                     <div class="order-total">
-                        Total: {{ open_order.order.total }}
+                        Итого: {{ open_order.order.total }}
                     </div>
                 </div>
             </a>
         </div>
     {% empty %}
         <div>
-            No order info.
+            Нет заказов.
         </div>
     {% endfor %}
 {% endblock %}

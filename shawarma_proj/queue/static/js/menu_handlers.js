@@ -14,7 +14,7 @@ $('.next-to-prepare-item').on
 
 $(function () {
     $('.subm').on('click', function (event) {
-        var confirmation = confirm("Confirm Order?");
+        var confirmation = confirm("Подтвердить заказ?");
         var form = $('.subm');
         if (confirmation == true) {
             $.ajaxSetup({
@@ -28,16 +28,14 @@ $(function () {
                 data: {"order_content": JSON.stringify(currOrder)},
                 dataType: 'json',
                 success: function (data) {
-                    alert('Success!');
-                    $('.response').text(data.received);
-                    res = data.received;
+                    alert('Заказ добавлен!');
                     currOrder = [];
                     DrawOrderTable();
                     CalculateTotal();
                 }
             }
             ).fail(function () {
-                    alert('You have no permission!');
+                    alert('У вас нет права добавлять заказ!');
                 });
         }
         else {
@@ -100,7 +98,7 @@ function DrawOrderTable() {
             '<div>'+currOrder[i]['title'] + '</div><div class="noteText">'+currOrder[i]['note']+'</div>'+
             '</td><td class="currentOrderActionCell">' +'x'+currOrder[i]['quantity']+
             '<input type="text" value="1" class="quantityInput" id="count-to-remove-' + i + '">' +
-            '<button class="btnRemove" onclick="Remove(' + i + ')">Depricate</button>' +
+            '<button class="btnRemove" onclick="Remove(' + i + ')">Убрать</button>' +
             '</td></tr>'
         );
     }

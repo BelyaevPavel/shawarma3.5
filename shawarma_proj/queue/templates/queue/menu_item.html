@@ -4,16 +4,16 @@
             {{ menu_item.title }}
         </div>
         <div class="menu-item-price">
-            {{ menu_item.price }}
+            {{ menu_item.price }} р.
         </div>
         <div class="menu-item-actions">
             <input type="text" class="quantityInput" id="count-{{ menu_item.id }}" value="1">
             <button class="btnAdd" onclick="Add({{ menu_item.id }}, '{{ menu_item.title }}', {{ menu_item.price }})">
-                Add
+                Добавить
             </button>
         </div>
     </div>
     <div class="menu-item-note">
-        <input type="text" class="noteInput" id="note-{{ menu_item.id }}" placeholder="Note">
+        <input type="text" class="note-input" id="note-{{ menu_item.id }}" placeholder="Примечание">
     </div>
 </div>

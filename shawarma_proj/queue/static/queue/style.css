@@ -94,7 +94,7 @@ p.welcome {
 }
 
 div.order-div {
-    width: calc(100% - 260px);
+    width: calc(100% - 280px);
     padding-left: 5px;
     padding-right: 5px;
     min-width: 400px;
@@ -198,8 +198,8 @@ div.header-who-logged {
 }
 
 div.menu-div {
-    width: 250px;
-    min-width: 250px;
+    width: 265px;
+    min-width: 265px;
     top: 0;
     bottom: 0;
     left: 0;
@@ -221,15 +221,19 @@ div.menu-item-title, div.menu-item-price, div.menu-item-actions {
 }
 
 div.menu-item-title {
-    min-width: 90px;
+    width: calc(100% - 55px);
 }
 
 div.menu-item-price {
-    min-width: 40px;
+    min-width: 55px;
+    text-align: right;
+}
+div.menu-item-note {
+    width: 100%;
 }
 
 div.menu-item-actions {
-    min-width: 112px;
+    width: 100%;
     text-align: right;
 }
 
@@ -337,6 +341,10 @@ span.grill-title {
 
 input.quantityInput {
     width: 40px;
+}
+
+input.item-note {
+    width: 100%;
 }
 
 p.noteText {

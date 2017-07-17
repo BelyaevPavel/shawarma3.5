@@ -6,37 +6,37 @@
         {% if staff_category.title == 'Cashier' %}
             <a href="{% url 'menu' %}">
                 <div class="header-buttons" id="menu">
-                        Menu
+                        Меню
                 </div>
             </a>
         {% endif %}
         {% if staff_category.title == 'Cashier' or staff_category.title == 'Operator' %}
             <a href="{% url 'current_queue' %}">
                 <div class="header-buttons" id="current-queue">
-                        Current Queue
+                        Очередь заказов
                 </div>
             </a>
         {% endif %}
         {% if staff_category.title == 'Operator' %}
             <a href="{% url 'production_queue' %}">
                 <div class="header-buttons" id="production">
-                        Production
+                        Производство
                 </div>
             </a>
         {% endif %}
         {% if staff_category.title == 'Cook' %}
             <a href="{% url 'cook_interface' %}">
                 <div class="header-buttons" id="cook_interface">
-                        Cook Interface
+                        Интерфейс Повара
                 </div>
             </a>
         {% endif %}
         <div class="header-who-logged" id="header-who-logged">
-            Logged as {{ user.first_name }} {{ user.last_name }}
+            {{ user.first_name }} {{ user.last_name }}
         </div>
         <a href="{% url 'logout' %}">
             <div class="header-buttons" id="logout">
-                    Log Out
+                    Выход
             </div>
         </a>
     </div>

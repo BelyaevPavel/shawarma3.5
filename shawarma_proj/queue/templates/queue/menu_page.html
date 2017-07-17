@@ -1,5 +1,5 @@
 {% extends "queue/base.html" %}
-<title>Make Order</title>
+<title>Меню</title>
 {% block aditional_static %}
     {% load static %}
     <script type="text/javascript" src="{% static 'js/menu_handlers.js' %}"></script>
@@ -10,13 +10,13 @@
     </div>
     <div class="order-div">
         <table class="currentOrderTable">
-            <thead>Order content</thead>
+            <thead>Содержание заказа</thead>
             <tbody></tbody>
             <tfoot>
             <tr>
                 <td class="currentOrderTotalText">
                     <div>
-                        Total
+                        Итого
                     </div>
                 </td>
                 <td class="currentOrderTotalFig">
@@ -29,13 +29,10 @@
             </tr>
             <tr>
                 <button class="subm" data-send-url="{% url 'make_order' %}">
-                    Submit
+                    Принять
                 </button>
             </tr>
             </tfoot>
         </table>
     </div>
-    <footer>
-        <p class="response"></p>
-    </footer>
 {% endblock %}
