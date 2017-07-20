@@ -10,7 +10,9 @@
     <div class="next-to-prepare-container">
         {% if next_product %}
             <div class="next-to-prepare-item" onclick="TakeItem({{ next_product.id }})">
-                <div class="item-title">{{ next_product.menu_item.title }}</div>
+                <div class="item-title">
+                    №{{ next_product.order.daily_number }} {{ next_product.menu_item.title }}
+                </div>
                 <div class="item-note">No onion.</div>
             </div>
         {% else %}
@@ -22,7 +24,7 @@
     <div class="in-progress-container">
         {% if in_progress %}
             <div class="in-progress-item" onclick="ItemToGrill({{ in_progress.id }})">
-                {{ in_progress.menu_item.title }}
+                №{{ next_product.order.daily_number }} {{ in_progress.menu_item.title }}
             </div>
         {% else %}
             <div class="in-progress-item">
@@ -36,7 +38,7 @@
         {% empty %}
             <div class="in-grill-slot-container">
                 <div class="in-grill-slot" id="slot1">
-                    Слот 1
+                    Пусто
                 </div>
             </div>
         {% endfor %}

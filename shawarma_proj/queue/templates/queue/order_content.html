@@ -50,4 +50,5 @@
             No menu items.
     {% endif %}
     <button onclick="ReadyOrder({{ order_info.id }})" {% if not ready %}disabled{% endif %}>Ready</button>
+    <button onclick="PrintOrder({{ order_info.id }})">Print</button>
 {% endblock %}

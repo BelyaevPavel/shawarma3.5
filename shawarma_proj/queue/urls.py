@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     url(r'^$', views.welcomer, name='welcomer'),
     url(r'^menu', views.menu, name='menu'),
+    url(r'^order/print/(?P<order_id>[0-9]+)/$', views.print_order, name="order_print"),
     url(r'^order/(?P<order_id>[0-9]+)/$', views.order_content, name="order_content"),
     url(r'^ajax/make_order', views.make_order, name="make_order"),
     url(r'^ajax/close_order', views.close_order, name="close_order"),
@@ -20,5 +21,6 @@ urlpatterns = [
     url(r'^current_queue', views.current_queue, name="current_queue"),
     url(r'^production_queue', views.production_queue, name="production_queue"),
     url(r'^cook_interface', views.cook_interface, name="cook_interface"),
-    url(r'^redirection', views.redirection, name="redirection")
+    url(r'^redirection', views.redirection, name="redirection"),
+    url(r'^buyer_queue', views.buyer_queue, name="buyer_queue")
 ]

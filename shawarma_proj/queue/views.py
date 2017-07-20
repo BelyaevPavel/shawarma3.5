@@ -44,6 +44,19 @@ def menu(request):
     return HttpResponse(template.render(context, request))
 
 
+def buyer_queue(request):
+    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                       supplement_completed=False).order_by('open_time')
+    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                        content_completed=True, supplement_completed=True).order_by('open_time')
+    context = {
+        'open_orders': open_orders,
+        'ready_orders': ready_orders
+    }
+    template = loader.get_template('queue/buyer_queue.html')
+    return HttpResponse(template.render(context, request))
+
+
 @login_required()
 def current_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
@@ -233,6 +246,20 @@ def order_content(request, order_id):
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'order_content': current_order_content,
         'ready': order_info.content_completed and order_info.supplement_completed
+    }
+    return HttpResponse(template.render(context, request))
+
+
+def print_order(request, order_id):
+    order_info = get_object_or_404(Order, id=order_id)
+    order_content = OrderContent.objects.filter(order_id=order_id).values('menu_item__title',
+                                                                          'menu_item__price').annotate(
+        count=Count('menu_item__title'))
+    print order_content
+    template = loader.get_template('queue/print_order.html')
+    context = {
+        'order_info': order_info,
+        'order_content': order_content
     }
     return HttpResponse(template.render(context, request))
 
@@ -446,6 +473,7 @@ def finish_cooking(request):
         data = {
             'success': True,
             'product_id': product_id,
+            'order_number': product.order.daily_number,
             'staff_maker': u'{} {}'.format(request.user.first_name, request.user.last_name)
         }
     else:

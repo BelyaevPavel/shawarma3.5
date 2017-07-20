@@ -30,6 +30,11 @@ function ReadyOrder(id) {
     }
 }
 
+function PrintOrder(order_id) {
+    var url = '/queue/order/print/'+order_id+'/';
+    window.open(url, 'Печать заказа ' + order_id)
+}
+
 function CancelItem(id) {
     var url = $('#urls').attr('data-cancel-item-url');
     var confirmation = confirm("Cancel item?");
@@ -79,7 +84,7 @@ function FinishCooking(id) {
             alert('Success!' + data);
         },
         complete: function () {
-            //location.reload();
+            location.reload();
         }
     });
 }

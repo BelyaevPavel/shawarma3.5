@@ -1,0 +1,18 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
+<div class="open-orders-container">
+{% for open_order in open_orders %}
+    <div class="open-order-display">
+        {{ open_order.daily_number }}
+    </div>
+{% empty %}
+{% endfor %}
+</div>
+<div class="ready-orders-container">
+{% for ready_order in ready_orders %}
+    <div class="ready-order-display">
+        {{ ready_order.daily_number }}
+    </div>
+{% empty %}
+{% endfor %}
+</div>

@@ -134,7 +134,7 @@ function FinishItemCooking(id) {
             },
             dataType: 'json',
             success: function (data) {
-                alert('Успех!' + data);
+                alert('Положите в заказ ' + data['order_number']);
             },
             complete: function () {
                 location.reload();

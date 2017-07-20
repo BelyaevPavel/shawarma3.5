@@ -1,6 +1,6 @@
 {% if next_product %}
     <div class="next-to-prepare-item" onclick="TakeItem({{ next_product.id }})">
-        <div class="item-title">{{ next_product.menu_item.title }}</div>
+        <div class="item-title">№{{ next_product.order.daily_number }} {{ next_product.menu_item.title }}</div>
         <div class="item-note">{{ next_product.note }}</div>
     </div>
 {% else %}
