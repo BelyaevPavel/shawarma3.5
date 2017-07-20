@@ -22,39 +22,32 @@
             </tr>
         {% endif %}
         </thead>
-        <tbody>
-        {% if order_content %}
-            {% for order_item in order_content %}
-                <tr class="currentOrderRow">
-                    <td class="item">
-                        <p>
-                            {{ order_item.menu_item }}
-                        </p>
-                        <p class="noteText">
-                            {{ order_item.note }}
-                        </p>
-                    </td>
-                    <td class="itemMaker">
-                        {{ order_item.staff_maker }}
-                    </td>
-                    <td class="currentOrderActionCell">
-                        {% if order_item.menu_item.can_be_prepared_by.title == 'Operator' %}
-                            <button onclick="FinishCooking({{ order_item.id }})">
-                                Finish
-                            </button>
-                        {% endif %}
-                        <button onclick="CancelItem({{ order_item.id }})">
-                            Cancel
-                        </button>
-                    </td>
-                </tr>
-            {% endfor %}
-        {% else %}
-            <tr>
-                No menu items.
-            </tr>
-        {% endif %}
-        </tbody>
     </table>
+    {% if order_content %}
+        {% for order_item in order_content %}
+            <div class="order-item-container">
+                <div class="order-item-title {% if order_item.finish_timestamp %}ready
+                {% endif %}">
+                    {{ order_item.menu_item }}
+                </div>
+                <div class="order-item-maker {% if order_item.finish_timestamp %}ready
+                {% endif %}">
+                    {{ order_item.staff_maker }}
+                </div>
+                <div class="order-item-actions">
+                    {% if order_item.menu_item.can_be_prepared_by.title == 'Operator' %}
+                        <button onclick="FinishCooking({{ order_item.id }})">
+                            Finish
+                        </button>
+                    {% endif %}
+                    <button onclick="CancelItem({{ order_item.id }})">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+            No menu items.
+    {% endif %}
     <button onclick="ReadyOrder({{ order_info.id }})" {% if not ready %}disabled{% endif %}>Ready</button>
 {% endblock %}

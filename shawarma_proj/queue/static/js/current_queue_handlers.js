@@ -20,7 +20,7 @@ function refresher() {
 }
 
 function CloseOrder(order_id) {
-    var confirmation = confirm("Close Order?");
+    var confirmation = confirm("Закрыть заказ?");
     if (confirmation == true) {
         $.ajaxSetup({
             beforeSend: function (xhr, settings) {
@@ -29,17 +29,20 @@ function CloseOrder(order_id) {
         });
         $.ajax({
                 type: 'POST',
-                url: form.attr('data-send-url'),
+                url: $('#urls').attr('data-close-order-url'),
                 data: {"order_id": order_id},
                 dataType: 'json',
                 success: function (data) {
-                    alert('Success! ' + data.received);
+                    alert('Успех! ' + data.received);
                     $('.response').text();
                     res = data.received;
+                },
+                complete: function () {
+                    location.reload();
                 }
             }
         ).fail(function () {
-            alert('You have no permission!');
+            alert('У вас нет прав!');
         });
     }
     else {

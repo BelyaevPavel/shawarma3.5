@@ -10,6 +10,7 @@ from hashlib import md5
 import datetime
 import json
 
+
 @login_required()
 def redirection(request):
     staff_category = StaffCategory.objects.get(staff__user=request.user)
@@ -19,6 +20,7 @@ def redirection(request):
         return HttpResponseRedirect('menu')
     if staff_category.title == 'Operator':
         return HttpResponseRedirect('current_queue')
+
 
 # Create your views here.
 @login_required()
@@ -44,10 +46,10 @@ def menu(request):
 
 @login_required()
 def current_queue(request):
-    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True).order_by(
-        'open_time')
-    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), content_completed=True).order_by(
-        'open_time')
+    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                       supplement_completed=False).order_by('open_time')
+    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                        content_completed=True, supplement_completed=True).order_by('open_time')
 
     template = loader.get_template('queue/current_queue_grid.html')
     context = {
@@ -60,12 +62,19 @@ def current_queue(request):
                          'operator_part': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='operator')
                          } for open_order in open_orders],
-        'ready_orders': ready_orders,
+        'ready_orders': [{'order': open_order,
+                          'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='cook').filter(
+                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                          'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                          'operator_part': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='operator')
+                          } for open_order in ready_orders],
         'open_length': len(open_orders),
         'ready_length': len(ready_orders),
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
     }
-    print StaffCategory.objects.get(staff__user=request.user)
     return HttpResponse(template.render(context, request))
 
 
@@ -109,7 +118,6 @@ def production_queue(request):
         'free_content': free_content,
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
     }
-    print StaffCategory.objects.get(staff__user=request.user)
     return HttpResponse(template.render(context, request))
 
 
@@ -199,7 +207,6 @@ def cook_interface(request):
             }
 
     template = loader.get_template('queue/cook_interface.html')
-    print StaffCategory.objects.get(staff__user=request.user)
     return HttpResponse(template.render(context, request))
 
 
@@ -207,6 +214,18 @@ def cook_interface(request):
 @permission_required('queue.change_order')
 def order_content(request, order_id):
     order_info = get_object_or_404(Order, id=order_id)
+    order_content = OrderContent.objects.filter(order_id=order_id)
+    flag = True
+    for item in order_content:
+        print u"{} {}".format(item.menu_item.title, item.finish_timestamp)
+        if item.finish_timestamp is None:
+            flag = False
+    print u"{} {} {}".format(flag, order_info.content_completed, order_info.content_completed)
+    if flag:
+        order_info.content_completed = True
+        order_info.supplement_completed = True
+    order_info.save()
+    print u"{} {} {}".format(flag, order_info.content_completed, order_info.content_completed)
     current_order_content = OrderContent.objects.filter(order=order_id)
     template = loader.get_template('queue/order_content.html')
     context = {
@@ -215,7 +234,6 @@ def order_content(request, order_id):
         'order_content': current_order_content,
         'ready': order_info.content_completed and order_info.supplement_completed
     }
-    print StaffCategory.objects.get(staff__user=request.user)
     return HttpResponse(template.render(context, request))
 
 
@@ -254,11 +272,12 @@ def make_order(request):
 @login_required()
 @permission_required('queue.change_order')
 def close_order(request):
-    content = json.loads(request.POST['order_id'])
-    order = Order.objects.get(id=content)
+    order_id = json.loads(request.POST.get('order_id', None))
+    order = Order.objects.get(id=order_id)
     order.close_time = datetime.datetime.now()
     order.save()
     data = {
+        'success': True,
         'received': u'Order №{} is closed.'.format(order.daily_number)
     }
 
@@ -346,13 +365,15 @@ def next_to_prepare(request):
 @permission_required('queue.can_cook')
 def take(request):
     product_id = request.POST.get('id', None)
+    print product_id
     if product_id:
-        product = OrderContent.objects.get(pk=product_id)
+        product = OrderContent.objects.get(id=product_id)
         if product.staff_maker is None:
             staff_maker = Staff.objects.get(user=request.user)
             product.staff_maker = staff_maker
             product.start_timestamp = datetime.datetime.now()
             product.save()
+            print u"{} taken by {}.".format(product.menu_item.title, request.user)
             data = {
                 'success': True
             }
@@ -416,6 +437,7 @@ def finish_cooking(request):
         order_content = OrderContent.objects.filter(order_id=product.order_id)
         flag = True
         for item in order_content:
+            print u"{} {}".format(item.menu_item.title, item.finish_timestamp)
             if item.finish_timestamp is None:
                 flag = False
         if flag:

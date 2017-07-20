@@ -4,7 +4,7 @@
 
 var currOrder = [];
 var total = 0;
-var res = ""
+var res = "";
 var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 
 $('.next-to-prepare-item').on

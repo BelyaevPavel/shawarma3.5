@@ -1,6 +1,7 @@
 /**
  * Created by paul on 10.07.17.
  */
+
 $(document).ready(function () {
     $('#cook_interface').addClass('active');
     AdjustLineHeight();
@@ -58,6 +59,7 @@ function AdjustLineHeight() {
 function TakeItem(id) {
     var url = $('#urls').attr('data-take-url');
     var confirmation = confirm("Take item?");
+    console.log(confirmation);
     if (confirmation) {
         $.ajaxSetup({
             beforeSend: function (xhr, settings) {
@@ -73,16 +75,18 @@ function TakeItem(id) {
             dataType: 'json',
             success: function (data) {
                 if (data['success']) {
-                    alert('Success!');
+                    alert('Успех!');
                 }
                 else {
-                    alert('Already taken by ' + data['staff_maker'] + '!');
+                    alert('Ужа делается ' + data['staff_maker'] + '!');
                 }
             },
             complete: function () {
                 location.reload();
             }
-        });
+        }).fail(function () {
+                    alert('У вас нет права добавлять заказ!');
+                });
     }
 
 }
@@ -104,7 +108,7 @@ function ItemToGrill(id) {
             },
             dataType: 'json',
             success: function (data) {
-                alert('Success!' + data);
+                alert('Успех!' + data);
             },
             complete: function () {
                 location.reload();
@@ -130,7 +134,7 @@ function FinishItemCooking(id) {
             },
             dataType: 'json',
             success: function (data) {
-                alert('Success!' + data);
+                alert('Успех!' + data);
             },
             complete: function () {
                 location.reload();

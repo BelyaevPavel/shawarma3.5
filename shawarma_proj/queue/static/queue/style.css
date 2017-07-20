@@ -101,6 +101,18 @@ div.order-div {
     float: left;
 }
 
+div.ready-orders {
+    width: 200px;
+    height: 100%;
+    float: left;
+    border-left: solid 2px #D8D8D8;
+}
+
+div.open-orders {
+    width: calc(100% - 205px);
+    float: left;
+}
+
 div.order-block-container {
     width: 180px;
     min-width: 180px;
@@ -324,6 +336,20 @@ div.item-note {
     height: 30%;
     line-height: 2;
     font-size: large;
+}
+
+div.order-item-container {
+    width: 100%;
+    height: 40px;
+    line-height: 40px;
+    border-top: solid 1px #D8D8D8;
+    border-bottom: solid 1px #D8D8D8;
+}
+
+div.order-item-title, div.order-item-maker, div.order-item-actions {
+    width: 33%;
+    float: left;
+    text-align: center;
 }
 
 span.item-span {
