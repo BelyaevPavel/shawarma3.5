@@ -7,38 +7,7 @@
     <input id="urls" hidden data-close-order-url="{% url 'close_order' %}">
     <div class="open-orders">
         {% for open_order in open_orders %}
-            <div class="order-block-container">
-                <div class="order-block shadowed">
-                    <div class="order-block-header">
-                        <div class="order-number  {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}ready{% endif %}">
-                            № {{ open_order.order.daily_number }}
-                        </div>
-                        <div class="order-cook-part  {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}ready{% endif %}">
-                            ({{ open_order.cook_part_ready_count.count }}/{{ open_order.cook_part_count.count }})
-                        </div>
-                        <div class="order-block-actions">
-                            <button {% if open_order.cook_part_count.count != open_order.cook_part_ready_count.count %}disabled{% endif %} onclick="CloseOrder({{ open_order.order.id }})">
-                                Закрыть
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="order-operator-part">
-                        <a href="{% url 'order_content' order_id=open_order.order.id %}">
-                            {% for oper_content in open_order.operator_part %}
-                                <div class="order-item">
-                                    {{ oper_content.menu_item.title }}
-                                </div>
-                            {% empty %}
-                                <p>Нет доп. товаров.</p>
-                            {% endfor %}
-                        </a>
-                    </div>
-                    <div class="order-total">
-                        Итого: {{ open_order.order.total }}
-                    </div>
-                </div>
-            </div>
+            {% include 'queue/open_order_block.html' with open_order=open_order %}
         {% empty %}
             <div>
                 Нет заказов.
@@ -47,38 +16,7 @@
     </div>
     <div class="ready-orders">
         {% for open_order in ready_orders %}
-            <div class="order-block-container">
-                <div class="order-block shadowed">
-                    <div class="order-block-header">
-                        <div class="order-number  {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}ready{% endif %}">
-                            № {{ open_order.order.daily_number }}
-                        </div>
-                        <div class="order-cook-part  {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}ready{% endif %}">
-                            ({{ open_order.cook_part_ready_count.count }}/{{ open_order.cook_part_count.count }})
-                        </div>
-                        <div class="order-block-actions">
-                            <button {% if open_order.cook_part_count.count != open_order.cook_part_ready_count.count %}disabled{% endif %} onclick="CloseOrder({{ open_order.order.id }})">
-                                Закрыть
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="order-operator-part">
-                        <a href="{% url 'order_content' order_id=open_order.order.id %}">
-                            {% for oper_content in open_order.operator_part %}
-                                <div class="order-item">
-                                    {{ oper_content.menu_item.title }}
-                                </div>
-                            {% empty %}
-                                <p>Нет доп. товаров.</p>
-                            {% endfor %}
-                        </a>
-                    </div>
-                    <div class="order-total">
-                        Итого: {{ open_order.order.total }}
-                    </div>
-                </div>
-            </div>
+            {% include 'queue/open_order_block.html' with open_order=open_order %}
         {% empty %}
             <div>
                 Нет заказов.

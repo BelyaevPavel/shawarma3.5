@@ -53,6 +53,7 @@ class Order(models.Model):
     closed_by = models.ForeignKey(Staff, related_name="closer", verbose_name="Closed By", null=True)
     canceled_by = models.ForeignKey(Staff, related_name="canceler", verbose_name="Canceled By", null=True)
     opened_by = models.ForeignKey(Staff, related_name="opener", verbose_name="Opened By", null=True)
+    printed = models.BooleanField(default=False, verbose_name="Check Printed")
 
     class Meta:
         permissions = (

@@ -57,6 +57,22 @@ def buyer_queue(request):
     return HttpResponse(template.render(context, request))
 
 
+def buyer_queue_ajax(request):
+    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                       supplement_completed=False).order_by('open_time')
+    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                        content_completed=True, supplement_completed=True).order_by('open_time')
+    context = {
+        'open_orders': open_orders,
+        'ready_orders': ready_orders
+    }
+    template = loader.get_template('queue/buyer_queue_ajax.html')
+    data = {
+        'html': template.render(context, request)
+    }
+    return JsonResponse(data)
+
+
 @login_required()
 def current_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
@@ -67,6 +83,7 @@ def current_queue(request):
     template = loader.get_template('queue/current_queue_grid.html')
     context = {
         'open_orders': [{'order': open_order,
+                         'printed': open_order.printed,
                          'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='cook').filter(
                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
@@ -93,14 +110,15 @@ def current_queue(request):
 
 @login_required()
 def current_queue_ajax(request):
-    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True).order_by(
-        'open_time')
-    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), content_completed=True).order_by(
-        'open_time')
+    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                       supplement_completed=False).order_by('open_time')
+    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                        content_completed=True, supplement_completed=True).order_by('open_time')
 
     template = loader.get_template('queue/current_queue_grid_ajax.html')
     context = {
         'open_orders': [{'order': open_order,
+                         'printed': open_order.printed,
                          'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='cook').filter(
                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
@@ -109,9 +127,18 @@ def current_queue_ajax(request):
                          'operator_part': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='operator')
                          } for open_order in open_orders],
-        'ready_orders': ready_orders,
+        'ready_orders': [{'order': open_order,
+                          'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='cook').filter(
+                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                          'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                          'operator_part': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='operator')
+                          } for open_order in ready_orders],
         'open_length': len(open_orders),
-        'ready_length': len(ready_orders)
+        'ready_length': len(ready_orders),
+        'staff_category': StaffCategory.objects.get(staff__user=request.user),
     }
     data = {
         'html': template.render(context, request)
@@ -252,10 +279,11 @@ def order_content(request, order_id):
 
 def print_order(request, order_id):
     order_info = get_object_or_404(Order, id=order_id)
+    order_info.printed = True
+    order_info.save()
     order_content = OrderContent.objects.filter(order_id=order_id).values('menu_item__title',
                                                                           'menu_item__price').annotate(
         count=Count('menu_item__title'))
-    print order_content
     template = loader.get_template('queue/print_order.html')
     context = {
         'order_info': order_info,

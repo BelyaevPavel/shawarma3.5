@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^order/print/(?P<order_id>[0-9]+)/$', views.print_order, name="order_print"),
     url(r'^order/(?P<order_id>[0-9]+)/$', views.order_content, name="order_content"),
     url(r'^ajax/make_order', views.make_order, name="make_order"),
+    url(r'^ajax/buyer_queue', views.buyer_queue_ajax, name="buyer_queue_ajax"),
     url(r'^ajax/close_order', views.close_order, name="close_order"),
     url(r'^ajax/ready_order', views.ready_order, name="ready_order"),
     url(r'^ajax/cancel_item', views.cancel_item, name="cancel_item"),
