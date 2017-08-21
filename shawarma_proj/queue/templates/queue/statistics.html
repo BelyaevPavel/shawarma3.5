@@ -1,0 +1,17 @@
+{% extends 'queue/base.html' %}
+{% block aditional_static %}
+{% load static %}
+    <script type="text/javascript" src="{% static 'js/statistics_handlers.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <div class="stat-sect-container">
+        <div class="stat-view-container">
+            <div class="stat-view" id="person-prod-cooked">
+
+            </div>
+        </div>
+        <div class="stat-actions-container">
+
+        </div>
+    </div>
+{% endblock %}

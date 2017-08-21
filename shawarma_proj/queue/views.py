@@ -76,9 +76,10 @@ def buyer_queue_ajax(request):
 @login_required()
 def current_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       supplement_completed=False).order_by('open_time')
+                                       is_canceled=False, supplement_completed=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True).order_by('open_time')
+                                        is_canceled=False, content_completed=True, supplement_completed=True).order_by(
+        'open_time')
 
     template = loader.get_template('queue/current_queue_grid.html')
     context = {
@@ -111,9 +112,10 @@ def current_queue(request):
 @login_required()
 def current_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       supplement_completed=False).order_by('open_time')
+                                       is_canceled=False, supplement_completed=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True).order_by('open_time')
+                                        is_canceled=False, content_completed=True, supplement_completed=True).order_by(
+        'open_time')
 
     template = loader.get_template('queue/current_queue_grid_ajax.html')
     context = {
@@ -174,12 +176,14 @@ def cook_interface(request):
 
     free_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
                                                order__close_time__isnull=True,
+                                               order__is_canceled=False,
                                                menu_item__can_be_prepared_by__title__iexact='cook',
                                                start_timestamp__isnull=True).order_by(
         'order__open_time')[:available_cook_count['id__count']]
 
     in_progress_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
                                                       order__close_time__isnull=True,
+                                                      order__is_canceled=False,
                                                       start_timestamp__isnull=False,
                                                       finish_timestamp__isnull=True,
                                                       staff_maker__user=user,
@@ -189,6 +193,7 @@ def cook_interface(request):
 
     in_grill_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
                                                    order__close_time__isnull=True,
+                                                   order__is_canceled=False,
                                                    start_timestamp__isnull=False,
                                                    finish_timestamp__isnull=True,
                                                    staff_maker__user=user,
@@ -257,15 +262,12 @@ def order_content(request, order_id):
     order_content = OrderContent.objects.filter(order_id=order_id)
     flag = True
     for item in order_content:
-        print u"{} {}".format(item.menu_item.title, item.finish_timestamp)
         if item.finish_timestamp is None:
             flag = False
-    print u"{} {} {}".format(flag, order_info.content_completed, order_info.content_completed)
     if flag:
         order_info.content_completed = True
         order_info.supplement_completed = True
     order_info.save()
-    print u"{} {} {}".format(flag, order_info.content_completed, order_info.content_completed)
     current_order_content = OrderContent.objects.filter(order=order_id)
     template = loader.get_template('queue/order_content.html')
     context = {
@@ -340,6 +342,28 @@ def close_order(request):
 
 
 @login_required()
+@permission_required('queue.change_order')
+def cancel_order(request):
+    order_id = request.POST.get('id', None)
+    print order_id
+    if order_id:
+        order = Order.objects.get(id=order_id)
+        order.canceled_by = Staff.objects.get(user=request.user)
+        order.is_canceled = True
+        order.save()
+        print u"{}".format(order)
+        data = {
+            'success': True
+        }
+    else:
+        data = {
+            'success': False
+        }
+
+    return JsonResponse(data)
+
+
+@login_required()
 @permission_required('queue.can_cook')
 def next_to_prepare(request):
     user = request.user
@@ -354,12 +378,14 @@ def next_to_prepare(request):
 
     free_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
                                                order__close_time__isnull=True,
+                                               order__is_canceled=False,
                                                menu_item__can_be_prepared_by__title__iexact='cook',
                                                start_timestamp__isnull=True).order_by(
         'order__open_time')[:available_cook_count['id__count']]
 
     in_progress_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
                                                       order__close_time__isnull=True,
+                                                      order__is_canceled=False,
                                                       start_timestamp__isnull=False,
                                                       finish_timestamp__isnull=True,
                                                       staff_maker__user=user,
@@ -463,6 +489,7 @@ def to_grill(request):
 def grill_timer(request):
     grilling = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
                                            order__close_time__isnull=True,
+                                           order__is_canceled=False,
                                            start_timestamp__isnull=False,
                                            finish_timestamp__isnull=True,
                                            staff_maker__user=request.user,
@@ -549,26 +576,6 @@ def finish_supplement(request):
 
 @login_required()
 @permission_required('queue.change_order')
-def cancel_order(request):
-    order_id = request.POST.get('id', None)
-    if order_id:
-        order = Order.objects.get(id=order_id)
-        order.canceled_by = request.user
-        order.is_canceled = True
-        order.save()
-        data = {
-            'success': True
-        }
-    else:
-        data = {
-            'success': False
-        }
-
-    return JsonResponse(data)
-
-
-@login_required()
-@permission_required('queue.change_order')
 def ready_order(request):
     order_id = request.POST.get('id', None)
     if order_id:
@@ -603,3 +610,12 @@ def cancel_item(request):
         }
 
     return JsonResponse(data)
+
+
+@login_required()
+def statistic_page(request):
+    template = loader.get_template('queue/statistics.html')
+    context = {
+
+    }
+    return HttpResponse(template.render(context, request))

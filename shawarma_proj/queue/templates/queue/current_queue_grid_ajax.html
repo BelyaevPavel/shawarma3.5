@@ -1,5 +1,5 @@
 {% load static %}
-<input id="urls" hidden data-close-order-url="{% url 'close_order' %}">
+<input id="urls" hidden data-close-order-url="{% url 'close_order' %}" data-cancel-order-url="{% url 'cancel_order' %}">
 <div class="open-orders">
     {% for open_order in open_orders %}
         {% include 'queue/open_order_block.html' with open_order=open_order %}

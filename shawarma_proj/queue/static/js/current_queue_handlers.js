@@ -12,8 +12,6 @@ function refresher() {
         url: 'ajax/current_queue_ajax.html',
         success: function (data) {
             $('div.page-content').html(data['html']);
-            console.log('refreshed');
-            console.log(data['html']);
         },
         complete: function () {
             setTimeout(refresher, 10000);
@@ -66,9 +64,10 @@ function CancelOrder(order_id) {
         $.ajax({
                 type: 'POST',
                 url: $('#urls').attr('data-cancel-order-url'),
-                data: {"order_id": order_id},
+                data: {"id": order_id},
                 dataType: 'json',
                 success: function (data) {
+                    console.log(data['success']);
                     alert('Заказ отменён!');
                 },
                 complete: function () {

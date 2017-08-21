@@ -24,6 +24,10 @@ function GrillRefresher() {
         dataType: 'json',
         success: function (data) {
             $('div.in-grill-container').html(data['html']);
+            var timer_text = $('div.in-grill-container .in-grill-timer');
+            timer_text.text(function () {
+                return this + " !";
+            })
         },
         complete: function () {
             setTimeout(GrillRefresher, 10000);
