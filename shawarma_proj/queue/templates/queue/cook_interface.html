@@ -24,7 +24,8 @@
     <div class="in-progress-container">
         {% if in_progress %}
             <div class="in-progress-item" onclick="ItemToGrill({{ in_progress.id }})">
-                №{{ next_product.order.daily_number }} {{ in_progress.menu_item.title }}
+                <div class="item-title">№{{ in_progress.order.daily_number }} {{ in_progress.menu_item.title }}</div>
+                <div class="item-note">{{ in_progress.note }}</div>
             </div>
         {% else %}
             <div class="in-progress-item">
