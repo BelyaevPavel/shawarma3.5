@@ -345,7 +345,7 @@ def close_order(request):
 @permission_required('queue.change_order')
 def cancel_order(request):
     order_id = request.POST.get('id', None)
-    print order_id
+    print request.POST
     if order_id:
         order = Order.objects.get(id=order_id)
         order.canceled_by = Staff.objects.get(user=request.user)
