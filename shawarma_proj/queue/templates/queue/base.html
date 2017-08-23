@@ -1,7 +1,6 @@
 {% csrf_token %}
 {% load static %}
 <link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
-<script type="text/javascript" src="{% static 'js/plotly-latest.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/base_handlers.js' %}"></script>
 {% include 'queue/header.html' with staff_category=staff_category %}

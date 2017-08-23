@@ -67,7 +67,6 @@ function CancelOrder(order_id) {
                 data: {"id": order_id},
                 dataType: 'json',
                 success: function (data) {
-                    console.log(data['success']);
                     alert('Заказ отменён!');
                 },
                 complete: function () {

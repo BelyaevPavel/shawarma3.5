@@ -23,5 +23,6 @@ urlpatterns = [
     url(r'^production_queue', views.production_queue, name="production_queue"),
     url(r'^cook_interface', views.cook_interface, name="cook_interface"),
     url(r'^redirection', views.redirection, name="redirection"),
-    url(r'^buyer_queue', views.buyer_queue, name="buyer_queue")
+    url(r'^buyer_queue', views.buyer_queue, name="buyer_queue"),
+    url(r'^statistics', views.statistic_page, name="statistics")
 ]
