@@ -7,6 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Max, Count, Avg, F
 from hashlib import md5
+from shawarma.settings import TIME_ZONE
 import datetime
 import json
 
@@ -496,9 +497,11 @@ def grill_timer(request):
                                            is_in_grill=True,
                                            is_canceled=False)
     template = loader.get_template('queue/grill_slot_ajax.html')
+    tzinfo = datetime.tzinfo(tzname=TIME_ZONE)
     context = {
-        'in_grill': [{'time': datetime.datetime.now().replace(tzinfo=None) - product.grill_timestamp.replace(
-            tzinfo=None),
+        'in_grill': [{'time': str(datetime.datetime.now().replace(tzinfo=tzinfo) - product.grill_timestamp.replace(
+            tzinfo=tzinfo))[:-str(datetime.datetime.now().replace(tzinfo=tzinfo) - product.grill_timestamp.replace(
+            tzinfo=tzinfo)).find('.')],
                       'product': product} for product in grilling]
     }
     data = {
