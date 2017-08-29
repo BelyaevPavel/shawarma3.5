@@ -104,10 +104,6 @@ function DrawOrderTable() {
     }
 }
 
-function DrawQueueTable() {
-
-}
-
 function CalculateTotal() {
     total = 0;
     for (var i = 0; i < currOrder.length; i++) {

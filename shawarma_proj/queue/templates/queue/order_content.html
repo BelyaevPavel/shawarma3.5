@@ -14,10 +14,10 @@
                     №: {{ order_info.daily_number }}
                 </td>
                 <td>
-                    Opened: {{ order_info.open_time }}
+                    Открыт: {{ order_info.open_time }}
                 </td>
                 <td>
-                    Closed: {{ order_info.close_time }}
+                    Закрыт: {{ order_info.close_time }}
                 </td>
             </tr>
         {% endif %}
@@ -37,18 +37,18 @@
                 <div class="order-item-actions">
                     {% if order_item.menu_item.can_be_prepared_by.title == 'Operator' %}
                         <button onclick="FinishCooking({{ order_item.id }})">
-                            Finish
+                            Закончить
                         </button>
                     {% endif %}
                     <button onclick="CancelItem({{ order_item.id }})">
-                        Cancel
+                        Отменить
                     </button>
                 </div>
             </div>
         {% endfor %}
     {% else %}
-            No menu items.
+            Нет товаров.
     {% endif %}
-    <button onclick="ReadyOrder({{ order_info.id }})" {% if not ready %}disabled{% endif %}>Ready</button>
-    <button onclick="PrintOrder({{ order_info.id }})">Print</button>
+    <button onclick="ReadyOrder({{ order_info.id }})" {% if not ready %}disabled{% endif %}>Заказ готов</button>
+    <button onclick="PrintOrder({{ order_info.id }})">Печать</button>
 {% endblock %}

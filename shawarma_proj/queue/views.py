@@ -46,9 +46,9 @@ def menu(request):
 
 def buyer_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       supplement_completed=False).order_by('open_time')
+                                       supplement_completed=False, is_canceled=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True).order_by('open_time')
+                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by('open_time')
     context = {
         'open_orders': open_orders,
         'ready_orders': ready_orders
@@ -59,9 +59,9 @@ def buyer_queue(request):
 
 def buyer_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       supplement_completed=False).order_by('open_time')
+                                       supplement_completed=False, is_canceled=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True).order_by('open_time')
+                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by('open_time')
     context = {
         'open_orders': open_orders,
         'ready_orders': ready_orders

@@ -3,7 +3,7 @@
  */
 function ReadyOrder(id) {
     var url = $('#urls').attr('data-ready-url');
-    var confirmation = confirm("Is order ready?");
+    var confirmation = confirm("Заказ готов?");
     if (confirmation) {
         console.log(id + ' ' + url);
         $.ajaxSetup({
@@ -19,12 +19,10 @@ function ReadyOrder(id) {
             },
             dataType: 'json',
             success: function (data) {
-                if (data['success']) {
-                    alert('Success!');
-                }
-            },
-            complete: function () {
-                location.reload();
+                location.href = $('#current-queue').parent().attr('href');
+                //if (data['success']) {
+                //    alert('Success!');
+                //}
             }
         });
     }
@@ -37,7 +35,7 @@ function PrintOrder(order_id) {
 
 function CancelItem(id) {
     var url = $('#urls').attr('data-cancel-item-url');
-    var confirmation = confirm("Cancel item?");
+    var confirmation = confirm("Исключить из заказа?");
     if (confirmation) {
         console.log(id + ' ' + url);
         $.ajaxSetup({
@@ -53,9 +51,9 @@ function CancelItem(id) {
             },
             dataType: 'json',
             success: function (data) {
-                if (data['success']) {
-                    alert('Success!');
-                }
+                // if (data['success']) {
+                //     alert('Успех!');
+                // }
             },
             complete: function () {
                 location.reload();

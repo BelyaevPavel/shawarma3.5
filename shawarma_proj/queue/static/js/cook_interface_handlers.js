@@ -79,7 +79,7 @@ function TakeItem(id) {
             dataType: 'json',
             success: function (data) {
                 if (data['success']) {
-                    alert('Успех!');
+                    //alert('Успех!');
                 }
                 else {
                     alert('Ужа делается ' + data['staff_maker'] + '!');
@@ -97,7 +97,7 @@ function TakeItem(id) {
 
 function ItemToGrill(id) {
     var url = $('#urls').attr('data-grill-url');
-    var confirmation = confirm("Grill item?");
+    var confirmation = confirm("Поместить в гриль?");
     if (confirmation) {
         $.ajaxSetup({
             beforeSend: function (xhr, settings) {
@@ -112,7 +112,7 @@ function ItemToGrill(id) {
             },
             dataType: 'json',
             success: function (data) {
-                alert('Успех!' + data);
+                //alert('Успех!' + data);
             },
             complete: function () {
                 location.reload();
@@ -123,7 +123,7 @@ function ItemToGrill(id) {
 
 function FinishItemCooking(id) {
     var url = $('#urls').attr('data-finish-url');
-    var confirmation = confirm("Finish item?");
+    var confirmation = confirm("Извлечь из гриля?");
     if (confirmation) {
         $.ajaxSetup({
             beforeSend: function (xhr, settings) {
