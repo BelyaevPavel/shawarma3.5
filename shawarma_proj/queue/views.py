@@ -346,13 +346,13 @@ def close_order(request):
 @permission_required('queue.change_order')
 def cancel_order(request):
     order_id = request.POST.get('id', None)
-    print request.POST
+    # print request.POST
     if order_id:
         order = Order.objects.get(id=order_id)
         order.canceled_by = Staff.objects.get(user=request.user)
         order.is_canceled = True
         order.save()
-        print u"{}".format(order)
+        # print u"{}".format(order)
         data = {
             'success': True
         }
@@ -447,7 +447,7 @@ def next_to_prepare(request):
 @permission_required('queue.can_cook')
 def take(request):
     product_id = request.POST.get('id', None)
-    print product_id
+    # print product_id
     if product_id:
         product = OrderContent.objects.get(id=product_id)
         if product.staff_maker is None:
@@ -455,7 +455,7 @@ def take(request):
             product.staff_maker = staff_maker
             product.start_timestamp = datetime.datetime.now()
             product.save()
-            print u"{} taken by {}.".format(product.menu_item.title, request.user)
+            # print u"{} taken by {}.".format(product.menu_item.title, request.user)
             data = {
                 'success': True
             }
@@ -522,7 +522,7 @@ def finish_cooking(request):
         order_content = OrderContent.objects.filter(order_id=product.order_id)
         flag = True
         for item in order_content:
-            print u"{} {}".format(item.menu_item.title, item.finish_timestamp)
+            # print u"{} {}".format(item.menu_item.title, item.finish_timestamp)
             if item.finish_timestamp is None:
                 flag = False
         if flag:
