@@ -7,7 +7,8 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Max, Count, Avg, F
 from hashlib import md5
-from shawarma.settings import TIME_ZONE
+from shawarma.settings import TIME_ZONE, LISTNER_URL
+import requests
 import datetime
 import json
 
@@ -49,7 +50,8 @@ def buyer_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        supplement_completed=False, is_canceled=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by('open_time')
+                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by(
+        'open_time')
     context = {
         'open_orders': open_orders,
         'ready_orders': ready_orders
@@ -62,7 +64,8 @@ def buyer_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        supplement_completed=False, is_canceled=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by('open_time')
+                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by(
+        'open_time')
     context = {
         'open_orders': open_orders,
         'ready_orders': ready_orders
@@ -299,9 +302,6 @@ def print_order(request, order_id):
 @permission_required('queue.add_order')
 def make_order(request):
     content = json.loads(request.POST['order_content'])
-    data = {
-        'received': "Received {}".format(content)
-    }
     order_next_number = 0
     order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
         Max('daily_number'))
@@ -313,6 +313,11 @@ def make_order(request):
 
     order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number)
     order.save()
+    data = {
+        "daily_number": order.daily_number
+    }
+    content_to_send = []
+
     total = 0
     for item in content:
         for i in range(0, int(item['quantity'])):
@@ -321,9 +326,19 @@ def make_order(request):
             menu_item = Menu.objects.get(id=item['id'])
             total += menu_item.price
 
+        content_to_send.append(
+            {
+                'item_id': item['id'],
+                'quantity': item['quantity']
+            }
+        )
+
     order.total = total
     order.save()
-
+    requests.post(LISTNER_URL, json=prepare_json_check(order))
+    data["total"] = order.total
+    data["content"] = json.dumps(content_to_send)
+    print json.dumps(data)
     return JsonResponse(data)
 
 
@@ -622,3 +637,168 @@ def statistic_page(request):
 
     }
     return HttpResponse(template.render(context, request))
+
+
+def prepare_json_check(order):
+    aux_query = OrderContent.objects.filter(order=order).values('menu_item__title', 'menu_item__guid_1c', 'menu_item__price').annotate(
+        total=Count('menu_item__title'))
+    print aux_query
+    rows = []
+    number = 1
+    sum = 0
+    for item in aux_query:
+        rows.append({
+            "НомерСтроки": number,
+            "КлючСвязи": number,
+            "Количество": item['total'],
+            "КоличествоУпаковок": item['total'],
+            "НеобходимостьВводаАкцизнойМарки": False,
+            "Номенклатура": {
+                "TYPE": "СправочникСсылка.Номенклатура",
+                "UID": item['menu_item__guid_1c']
+            },
+            "ПродажаПодарка": False,
+            "РегистрацияПродажи": False,
+            "Резервировать": False,
+            "Склад": {
+                "TYPE": "СправочникСсылка.Склады",
+                "UID": "cc442ddc-767b-11e6-82c6-28c2dd30392b"
+            },
+            "СтавкаНДС": {
+                "TYPE": "ПеречислениеСсылка.СтавкиНДС",
+                "UID": "БезНДС"
+            },
+            "Сумма": item['menu_item__price'] * item['total'],
+            "Цена": item['menu_item__price']
+        })
+        number += 1
+        sum += item['menu_item__price'] * item['total']
+    print rows
+    aux_dict = {
+        "OBJECT": True,
+        "NEW": "Документы.ЧекККМ.СоздатьДокумент()",
+        "SAVE": True,
+        "Проведен": True,
+        "Ссылка": {
+            "TYPE": "ДокументСсылка.ЧекККМ",
+            "UID": "1f1b7ecc-8760-11e7-82a6-002215bf2d6a"
+        },
+        "ПометкаУдаления": False,
+        "Дата": {
+            "TYPE": "Дата",
+            "UID": None
+        },
+        "Номер": "0000-165963",
+        "АналитикаХозяйственнойОперации": {
+            "TYPE": "СправочникСсылка.АналитикаХозяйственныхОпераций",
+            "UID": "5715e4c9-767b-11e6-82c6-28c2dd30392b"
+        },
+        "БонусыНачислены": False,
+        "ВидОперации": {
+            "TYPE": "ПеречислениеСсылка.ВидыОперацийЧекККМ",
+            "UID": "Продажа"
+        },
+        "ДисконтнаяКарта": {
+            "TYPE": "СправочникСсылка.ИнформационныеКарты",
+            "UID": "7ba5d64b-e6b0-11e6-8279-002215bf2d6a"
+        },
+        "КассаККМ": {
+            "TYPE": "СправочникСсылка.КассыККМ",
+            "UID": "8414dfc5-7683-11e6-8251-002215bf2d6a"
+        },
+        "Магазин": {
+            "TYPE": "СправочникСсылка.Магазины",
+            "UID": "cc442ddb-767b-11e6-82c6-28c2dd30392b"
+        },
+        "НомерЧекаККМ": 6036,
+        "Организация": {
+            "TYPE": "СправочникСсылка.Организации",
+            "UID": "1d68a28e-767b-11e6-82c6-28c2dd30392b"
+        },
+        "Ответственный": {
+            "TYPE": "СправочникСсылка.Пользователи",
+            "UID": "1d68a28d-767b-11e6-82c6-28c2dd30392b"
+        },
+        "ОтработанПереход": False,
+        "ОтчетОРозничныхПродажах": {
+            "TYPE": "ДокументСсылка.ОтчетОРозничныхПродажах",
+            "UID": "1f1b7ecd-8760-11e7-82a6-002215bf2d6a"
+        },
+        "СкидкиРассчитаны": True,
+        "СтатусЧекаККМ": {
+            "TYPE": "ПеречислениеСсылка.СтатусыЧековККМ",
+            "UID": "Архивный"
+        },
+        "СуммаДокумента": sum,
+        "ЦенаВключаетНДС": False,
+        "ОперацияСДенежнымиСредствами": False,
+        "Товары": {
+            "TYPE": "ТаблицаЗначений",
+            "COLUMNS": {
+                "НомерСтроки": None,
+                "ЗаказПокупателя": None,
+                "КлючСвязи": None,
+                "КлючСвязиСерийныхНомеров": None,
+                "КодСтроки": None,
+                "Количество": None,
+                "КоличествоУпаковок": None,
+                "НеобходимостьВводаАкцизнойМарки": None,
+                "Номенклатура": None,
+                "Продавец": None,
+                "ПродажаПодарка": None,
+                "ПроцентАвтоматическойСкидки": None,
+                "ПроцентРучнойСкидки": None,
+                "РегистрацияПродажи": None,
+                "Резервировать": None,
+                "Склад": None,
+                "СтавкаНДС": None,
+                "СтатусУказанияСерий": None,
+                "Сумма": None,
+                "СуммаАвтоматическойСкидки": None,
+                "СуммаНДС": None,
+                "СуммаРучнойСкидки": None,
+                "СуммаСкидкиОплатыБонусом": None,
+                "Упаковка": None,
+                "Характеристика": None,
+                "Цена": None,
+                "Штрихкод": None
+            },
+            "ROWS": rows
+        },
+        "Оплата": {
+            "TYPE": "ТаблицаЗначений",
+            "COLUMNS": {
+                "НомерСтроки": None,
+                "ВидОплаты": None,
+                "ЭквайринговыйТерминал": None,
+                "Сумма": None,
+                "ПроцентКомиссии": None,
+                "СуммаКомиссии": None,
+                "СсылочныйНомер": None,
+                "НомерЧекаЭТ": None,
+                "НомерПлатежнойКарты": None,
+                "ДанныеПереданыВБанк": None,
+                "СуммаБонусовВСкидках": None,
+                "КоличествоБонусов": None,
+                "КоличествоБонусовВСкидках": None,
+                "БонуснаяПрограммаЛояльности": None,
+                "ДоговорПлатежногоАгента": None,
+                "КлючСвязиОплаты": None
+            },
+            "ROWS": [
+                {
+                    "НомерСтроки": 1,
+                    "ВидОплаты": {
+                        "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
+                        "UID": "5715e4bd-767b-11e6-82c6-28c2dd30392b"
+                    },
+                    "Сумма": sum,
+                    "ДанныеПереданыВБанк": False
+                }
+            ]
+        }
+    }
+    aux_dict["КассаККМ"] = "8414dfc5-7683-11e6-8251-002215bf2d6a"
+    aux_dict["Магазин"] = "cc442ddb-767b-11e6-82c6-28c2dd30392b"
+    aux_dict["Организация"] = "1d68a28e-767b-11e6-82c6-28c2dd30392b"
+    return json.dumps(aux_dict)

@@ -34,6 +34,7 @@ class Menu(models.Model):
     price = models.FloatField(default=0, validators=[MinValueValidator(0, "Price can't be negative!")])
     avg_preparation_time = models.DurationField(verbose_name="Average preparation time.")
     can_be_prepared_by = models.ForeignKey(StaffCategory)
+    guid_1c = models.CharField(max_length=100, default="")
 
     def __str__(self):
         return u"{}".format(self.title)
@@ -54,6 +55,7 @@ class Order(models.Model):
     canceled_by = models.ForeignKey(Staff, related_name="canceler", verbose_name="Canceled By", null=True)
     opened_by = models.ForeignKey(Staff, related_name="opener", verbose_name="Opened By", null=True)
     printed = models.BooleanField(default=False, verbose_name="Check Printed")
+    is_paid = models.BooleanField(default=False)
 
     class Meta:
         permissions = (
