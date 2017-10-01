@@ -16,6 +16,12 @@ $(function () {
     $('.subm').on('click', function (event) {
         var confirmation = confirm("Подтвердить заказ?");
         var form = $('.subm');
+        var is_paid = true;
+        if($('#is_paid').attr('checked') != 'checked')
+            is_paid = false;
+        var paid_with_cash = true;
+        if($('#paid_with_cash').attr('checked') != 'checked')
+            paid_with_cash = false;
         if (confirmation == true) {
             $.ajaxSetup({
                 beforeSend: function (xhr, settings) {
@@ -25,7 +31,11 @@ $(function () {
             $.ajax({
                 type: 'POST',
                 url: form.attr('data-send-url'),
-                data: {"order_content": JSON.stringify(currOrder)},
+                data: {
+                    "order_content": JSON.stringify(currOrder),
+                    "is_paid": JSON.stringify(is_paid),
+                    "paid_with_cash": JSON.stringify(paid_with_cash)
+                },
                 dataType: 'json',
                 success: function (data) {
                     alert('Заказ добавлен!');

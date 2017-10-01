@@ -31,6 +31,13 @@
                 <button class="subm" data-send-url="{% url 'make_order' %}">
                     Принять
                 </button>
+                <p>
+                    <input type="checkbox" id="is_paid" checked value="Оплачен" name="Оплачено"> Оплачено
+                </p>
+                <p>
+                    <input type="checkbox" id="paid_with_cash" checked value="Оплачен наличными" name="Оплачено наличными"> Наличные
+                </p>
+
             </tr>
             </tfoot>
         </table>

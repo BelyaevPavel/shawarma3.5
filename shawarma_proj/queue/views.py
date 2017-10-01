@@ -302,6 +302,8 @@ def print_order(request, order_id):
 @permission_required('queue.add_order')
 def make_order(request):
     content = json.loads(request.POST['order_content'])
+    is_paid = json.loads(request.POST['is_paid'])
+    paid_with_cash = json.loads(request.POST['paid_with_cash'])
     order_next_number = 0
     order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
         Max('daily_number'))
@@ -311,7 +313,8 @@ def make_order(request):
         else:
             order_next_number = 1
 
-    order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number)
+    order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number, is_paid=is_paid,
+                  paid_with_cash=paid_with_cash)
     order.save()
     data = {
         "daily_number": order.daily_number
@@ -335,10 +338,10 @@ def make_order(request):
 
     order.total = total
     order.save()
-    requests.post(LISTNER_URL, json=prepare_json_check(order))
+    if order.is_paid:
+        requests.post(LISTNER_URL, json=prepare_json_check(order))
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
-    print json.dumps(data)
     return JsonResponse(data)
 
 
@@ -361,13 +364,11 @@ def close_order(request):
 @permission_required('queue.change_order')
 def cancel_order(request):
     order_id = request.POST.get('id', None)
-    print request.POST
     if order_id:
         order = Order.objects.get(id=order_id)
         order.canceled_by = Staff.objects.get(user=request.user)
         order.is_canceled = True
         order.save()
-        print u"{}".format(order)
         data = {
             'success': True
         }
@@ -462,7 +463,6 @@ def next_to_prepare(request):
 @permission_required('queue.can_cook')
 def take(request):
     product_id = request.POST.get('id', None)
-    print product_id
     if product_id:
         product = OrderContent.objects.get(id=product_id)
         if product.staff_maker is None:
@@ -470,7 +470,7 @@ def take(request):
             product.staff_maker = staff_maker
             product.start_timestamp = datetime.datetime.now()
             product.save()
-            print u"{} taken by {}.".format(product.menu_item.title, request.user)
+
             data = {
                 'success': True
             }
@@ -537,7 +537,6 @@ def finish_cooking(request):
         order_content = OrderContent.objects.filter(order_id=product.order_id)
         flag = True
         for item in order_content:
-            print u"{} {}".format(item.menu_item.title, item.finish_timestamp)
             if item.finish_timestamp is None:
                 flag = False
         if flag:
@@ -640,12 +639,18 @@ def statistic_page(request):
 
 
 def prepare_json_check(order):
-    aux_query = OrderContent.objects.filter(order=order).values('menu_item__title', 'menu_item__guid_1c', 'menu_item__price').annotate(
+    aux_query = OrderContent.objects.filter(order=order).values('menu_item__title', 'menu_item__guid_1c',
+                                                                'menu_item__price', 'order__paid_with_cash').annotate(
         total=Count('menu_item__title'))
-    print aux_query
     rows = []
     number = 1
     sum = 0
+    payment_type_uid = ""
+    print aux_query
+    if aux_query[0]['order__paid_with_cash']:
+        payment_type_uid = "5715e4bd-767b-11e6-82c6-28c2dd30392b"
+    else:
+        payment_type_uid = ""
     for item in aux_query:
         rows.append({
             "НомерСтроки": number,
@@ -673,7 +678,6 @@ def prepare_json_check(order):
         })
         number += 1
         sum += item['menu_item__price'] * item['total']
-    print rows
     aux_dict = {
         "OBJECT": True,
         "NEW": "Документы.ЧекККМ.СоздатьДокумент()",
@@ -790,7 +794,7 @@ def prepare_json_check(order):
                     "НомерСтроки": 1,
                     "ВидОплаты": {
                         "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
-                        "UID": "5715e4bd-767b-11e6-82c6-28c2dd30392b"
+                        "UID": payment_type_uid
                     },
                     "Сумма": sum,
                     "ДанныеПереданыВБанк": False
