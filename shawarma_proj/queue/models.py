@@ -55,7 +55,9 @@ class Order(models.Model):
     canceled_by = models.ForeignKey(Staff, related_name="canceler", verbose_name="Canceled By", null=True)
     opened_by = models.ForeignKey(Staff, related_name="opener", verbose_name="Opened By", null=True)
     printed = models.BooleanField(default=False, verbose_name="Check Printed")
-    is_paid = models.BooleanField(default=False)
+    is_paid = models.BooleanField(default=False, verbose_name="Is Paid")
+    # True - if paid with cash, False - if paid with card.
+    paid_with_cash = models.BooleanField(default=True, verbose_name="Paid With Cash")
 
     class Meta:
         permissions = (
