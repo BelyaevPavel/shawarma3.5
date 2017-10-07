@@ -428,3 +428,9 @@ input.item-note {
 p.noteText {
     font-size: small;
 }
+
+img#shawarma-header {
+    float: left;
+    width: 100%;
+    height: 150px;
+}
