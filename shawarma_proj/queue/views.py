@@ -338,8 +338,9 @@ def make_order(request):
 
     order.total = total
     order.save()
-    if order.is_paid:
-        requests.post(LISTNER_URL, json=prepare_json_check(order))
+    prepare_json_check(order)
+    #if order.is_paid:
+    #    requests.post(LISTNER_URL, json=prepare_json_check(order))
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
     return JsonResponse(data)
@@ -646,26 +647,25 @@ def prepare_json_check(order):
     number = 1
     sum = 0
     payment_type_uid = ""
-    print aux_query
     if aux_query[0]['order__paid_with_cash']:
         payment_type_uid = "5715e4bd-767b-11e6-82c6-28c2dd30392b"
     else:
         payment_type_uid = ""
     for item in aux_query:
         rows.append({
-            "НомерСтроки": number,
-            "КлючСвязи": number,
-            "Количество": item['total'],
-            "КоличествоУпаковок": item['total'],
-            "НеобходимостьВводаАкцизнойМарки": False,
-            "Номенклатура": {
+            u"НомерСтроки": number,
+            u"КлючСвязи": number,
+            u"Количество": item['total'],
+            u"КоличествоУпаковок": item['total'],
+            u"НеобходимостьВводаАкцизнойМарки": False,
+            u"Номенклатура": {
                 "TYPE": "СправочникСсылка.Номенклатура",
                 "UID": item['menu_item__guid_1c']
             },
-            "ПродажаПодарка": False,
-            "РегистрацияПродажи": False,
-            "Резервировать": False,
-            "Склад": {
+            u"ПродажаПодарка": False,
+            u"РегистрацияПродажи": False,
+            u"Резервировать": False,
+            u"Склад": {
                 "TYPE": "СправочникСсылка.Склады",
                 "UID": "cc442ddc-767b-11e6-82c6-28c2dd30392b"
             },
@@ -685,14 +685,14 @@ def prepare_json_check(order):
         "Проведен": True,
         "Ссылка": {
             "TYPE": "ДокументСсылка.ЧекККМ",
-            "UID": "1f1b7ecc-8760-11e7-82a6-002215bf2d6a"
+            "UID": "0000-0000-0000-0000-0000"
         },
         "ПометкаУдаления": False,
         "Дата": {
             "TYPE": "Дата",
             "UID": None
         },
-        "Номер": "0000-165963",
+        "Номер": "0000-ЯЯЯЯЯЯ",
         "АналитикаХозяйственнойОперации": {
             "TYPE": "СправочникСсылка.АналитикаХозяйственныхОпераций",
             "UID": "5715e4c9-767b-11e6-82c6-28c2dd30392b"
@@ -802,7 +802,5 @@ def prepare_json_check(order):
             ]
         }
     }
-    aux_dict["КассаККМ"] = "8414dfc5-7683-11e6-8251-002215bf2d6a"
-    aux_dict["Магазин"] = "cc442ddb-767b-11e6-82c6-28c2dd30392b"
-    aux_dict["Организация"] = "1d68a28e-767b-11e6-82c6-28c2dd30392b"
+    print json.dumps(aux_dict)
     return json.dumps(aux_dict)
