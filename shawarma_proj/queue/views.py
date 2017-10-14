@@ -338,9 +338,10 @@ def make_order(request):
 
     order.total = total
     order.save()
-    prepare_json_check(order)
-    #if order.is_paid:
-    #    requests.post(LISTNER_URL, json=prepare_json_check(order))
+    # if order.is_paid:
+    print "Sending request to " + LISTNER_URL
+    requests.post(LISTNER_URL, json=prepare_json_check(order))
+    print "Request sended."
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
     return JsonResponse(data)
@@ -801,5 +802,5 @@ def prepare_json_check(order):
             ]
         }
     }
-    print json.dumps(aux_dict)
-    return json.dumps(aux_dict)
+    print "JSON formed!"
+    return json.dumps(aux_dict, ensure_ascii=False)
