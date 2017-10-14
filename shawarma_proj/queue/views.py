@@ -72,7 +72,8 @@ def buyer_queue_ajax(request):
     }
     template = loader.get_template('queue/buyer_queue_ajax.html')
     data = {
-        'html': template.render(context, request)
+        'html': template.render(context, request),
+        'ready': json.dumps([order.daily_number for order in ready_orders])
     }
     return JsonResponse(data)
 
