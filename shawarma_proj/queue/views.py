@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from .models import Menu, Order, Staff, StaffCategory, OrderContent
+from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent
 from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -42,6 +42,7 @@ def menu(request):
         'user': request.user,
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'menu_items': menu_items,
+        'menu_categories': MenuCategory.objects.all()
     }
     return HttpResponse(template.render(context, request))
 
@@ -305,6 +306,7 @@ def make_order(request):
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
+    print u"Paid: {}; Cash: {}".format(is_paid, paid_with_cash);
     order_next_number = 0
     order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
         Max('daily_number'))
@@ -645,13 +647,9 @@ def prepare_json_check(order):
                                                                 'menu_item__price', 'order__paid_with_cash').annotate(
         total=Count('menu_item__title'))
     rows = []
+    pay_rows = []
     number = 1
-    sum = 0
-    payment_type_uid = ""
-    if aux_query[0]['order__paid_with_cash']:
-        payment_type_uid = "5715e4bd-767b-11e6-82c6-28c2dd30392b"
-    else:
-        payment_type_uid = ""
+    sum = 0    
     for item in aux_query:
         rows.append({
             u"НомерСтроки": number,
@@ -679,21 +677,49 @@ def prepare_json_check(order):
         })
         number += 1
         sum += item['menu_item__price'] * item['total']
+
+    
+    print u"Cash: {}".format(aux_query[0]['order__paid_with_cash']);
+    if aux_query[0]['order__paid_with_cash']:
+	pay_rows.append({
+            u"НомерСтроки": 1,
+            u"ВидОплаты": {
+                "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
+                "UID": "5715e4bd-767b-11e6-82c6-28c2dd30392b"
+            },
+            u"Сумма": sum,
+            u"ДанныеПереданыВБанк": False
+        })
+    else:
+        pay_rows.append({
+            u"НомерСтроки": 1,
+            u"ВидОплаты": {
+                "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
+                "UID": "8414dfc8-7683-11e6-8251-002215bf2d6a"
+            },
+            u"ЭквайринговыйТерминал": {
+                "TYPE": "СправочникСсылка.ЭквайринговыеТерминалы",
+                "UID": "8414dfc9-7683-11e6-8251-002215bf2d6a"
+            },
+            u"Сумма": sum,
+            u"ДанныеПереданыВБанк": False
+        })
+
     aux_dict = {
         "OBJECT": True,
         "NEW": "Документы.ЧекККМ.СоздатьДокумент()",
         "SAVE": True,
-        "Проведен": True,
+        "Проведен": False,
         "Ссылка": {
             "TYPE": "ДокументСсылка.ЧекККМ",
-            "UID": "0000-0000-0000-0000-0000"
+            "UID": "0000-0000-0000-0000"
         },
         "ПометкаУдаления": False,
         "Дата": {
             "TYPE": "Дата",
             "UID": None
         },
-        "Номер": "0000-ЯЯЯЯЯЯ",
+        "Номер": "ЯЯЯЯЯЯ",
         "АналитикаХозяйственнойОперации": {
             "TYPE": "СправочникСсылка.АналитикаХозяйственныхОпераций",
             "UID": "5715e4c9-767b-11e6-82c6-28c2dd30392b"
@@ -725,15 +751,7 @@ def prepare_json_check(order):
             "UID": "1d68a28d-767b-11e6-82c6-28c2dd30392b"
         },
         "ОтработанПереход": False,
-        "ОтчетОРозничныхПродажах": {
-            "TYPE": "ДокументСсылка.ОтчетОРозничныхПродажах",
-            "UID": "1f1b7ecd-8760-11e7-82a6-002215bf2d6a"
-        },
         "СкидкиРассчитаны": True,
-        "СтатусЧекаККМ": {
-            "TYPE": "ПеречислениеСсылка.СтатусыЧековККМ",
-            "UID": "Архивный"
-        },
         "СуммаДокумента": sum,
         "ЦенаВключаетНДС": False,
         "ОперацияСДенежнымиСредствами": False,
@@ -790,17 +808,7 @@ def prepare_json_check(order):
                 "ДоговорПлатежногоАгента": None,
                 "КлючСвязиОплаты": None
             },
-            "ROWS": [
-                {
-                    "НомерСтроки": 1,
-                    "ВидОплаты": {
-                        "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
-                        "UID": payment_type_uid
-                    },
-                    "Сумма": sum,
-                    "ДанныеПереданыВБанк": False
-                }
-            ]
+            "ROWS": pay_rows
         }
     }
     print "JSON formed!"

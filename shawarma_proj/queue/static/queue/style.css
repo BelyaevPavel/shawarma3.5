@@ -240,6 +240,48 @@ div.header-buttons {
     border-left: solid 1px #D8D8D8;
 }
 
+
+div.menu-header-div-container {
+    position: relative;
+    border-bottom: solid 1px #D8D8D8;
+    box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.5);
+    background: #F6F6F6;
+    height: 60px;
+    width: 100%-180px;
+    min-width: 750px;
+    line-height: 60px;
+    left: 0;
+    right: 0;
+    top: 0 !important;
+    z-index: 1000;
+
+}
+
+div.menu-header-div {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 0;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 40px;
+    line-height: 60px;
+    text-align: center;
+    background-color: rgba(246, 246, 246, 0.63);
+}
+
+div.menu-header-buttons {
+    min-width: 100px;
+    max-width: 33%;
+    float: left;
+    padding-left: 1px;
+    padding-right: 1px;
+    border-left: solid 1px #D8D8D8;
+    cursor: pointer;
+}
+
 div.header-who-logged {
     min-height: 10px;
     min-width: 200px;
@@ -257,6 +299,13 @@ div.menu-div {
     float: left;
     background-color: rgba(246, 246, 246, 0.63);
     box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.5);
+}
+
+
+div.menu-item-container {
+    position: relative;
+    left: 0;
+    top: 60 !important;
 }
 
 div.menu-content, div.menu-item-details, div.menu-item-note {

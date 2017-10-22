@@ -21,7 +21,7 @@ function refresher() {
             sound_number(difference);
         },
         complete: function () {
-            setTimeout(refresher, 30000);
+            setTimeout(refresher, 10000);
         }
     });
 }
@@ -38,13 +38,13 @@ function sound_number(difference) {
             $('#speaker-order')[0].load();
             setTimeout(function () {
                 $('#speaker-number')[0].play();
-            }, 500);
+            }, 750);
             $('#speaker-number')[0].load();
             setTimeout(function () {
                 $(aux_str)[0].play();
-            }, 1000);
+            }, 1500);
             $(aux_str)[0].load();
-        }, 1500 * index);
+        }, 3000 * index);
     });
     ready_order_numbers = $.merge(ready_order_numbers, difference);
 }
