@@ -11,8 +11,6 @@ var total = 0;
 var res = ""
 var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 
-$('.next-to-prepare-item').on
-
 $(function () {
     $('.subm').on('click', function (event) {
         var confirmation = confirm("Подтвердить заказ?");
@@ -66,6 +64,39 @@ function Remove(index) {
     DrawOrderTable();
 }
 
+function AddOne(id, title, price) {
+    var quantity = 1;
+    var note = '';
+    var index = FindItem(id, note);
+    if (index == null) {
+        currOrder.push(
+            {
+                'id': id,
+                'title': title,
+                'price': price,
+                'quantity': quantity,
+                'note': note
+            }
+        );
+    }
+    else {
+        currOrder[index]['quantity'] = parseInt(quantity) + parseInt(currOrder[index]['quantity']);
+    }
+    CalculateTotal();
+    DrawOrderTable();
+}
+
+function EditNote(id, note) {
+	var newnote = prompt("Комментарий", note);
+	if (newnote != null) {
+		var index = FindItem(id, note);
+		if (index != null){
+			currOrder[index]['note'] = newnote;
+		}
+	}
+	DrawOrderTable();
+}
+
 function Add(id, title, price) {
     var quantity = $('#count-' + id).val();
     var note = $('#note-' + id).val();
@@ -105,7 +136,7 @@ function DrawOrderTable() {
     $('table.currentOrderTable tbody tr').remove();
     for (var i = 0; i < currOrder.length; i++) {
         $('table.currentOrderTable').append(
-            '<tr class="currentOrderRow" index="' + i + '"><td class="currentOrderTitleCell">' +
+            '<tr class="currentOrderRow" index="' + i + '"><td class="currentOrderTitleCell" onclick="EditNote(' + currOrder[i]['id'] + ',\'' + currOrder[i]['note'] + '\')">' +
             '<div>' + currOrder[i]['title'] + '</div><div class="noteText">' + currOrder[i]['note'] + '</div>' +
             '</td><td class="currentOrderActionCell">' + 'x' + currOrder[i]['quantity'] +
             '<input type="text" value="1" class="quantityInput" id="count-to-remove-' + i + '">' +

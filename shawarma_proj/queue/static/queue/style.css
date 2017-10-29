@@ -14,6 +14,7 @@ table.currentQueueTable {
 td.currentOrderTitleCell {
     border-bottom: 1pt solid black;
     text-align: left;
+	cursor: pointer;
 }
 
 td.currentOrderActionCell {
@@ -248,7 +249,7 @@ div.menu-header-div-container {
     background: #F6F6F6;
     height: 60px;
     width: 100%-180px;
-    min-width: 750px;
+    min-width: 400px;
     line-height: 60px;
     left: 0;
     right: 0;
@@ -266,19 +267,21 @@ div.menu-header-div {
     z-index: 0;
     box-sizing: border-box;
     width: 100%;
-    min-height: 40px;
+    min-height: 120px;
     line-height: 60px;
     text-align: center;
     background-color: rgba(246, 246, 246, 0.63);
 }
 
 div.menu-header-buttons {
-    min-width: 100px;
+    min-width: 90px;
     max-width: 33%;
     float: left;
     padding-left: 1px;
     padding-right: 1px;
     border-left: solid 1px #D8D8D8;
+    border-right: solid 1px #D8D8D8;
+    border-bottom: solid 1px #D8D8D8;
     cursor: pointer;
 }
 
@@ -293,6 +296,7 @@ div.header-who-logged {
 div.menu-div {
     width: calc(100% - 294px);
     min-width: 265px;
+	height: 120px;
     top: 0;
     bottom: 0;
     left: 0;
@@ -318,25 +322,30 @@ div.menu-content {
 
 div.menu-item {
 
-    margin: 1px;
+    margin: 5px;
     padding: 7px;
-    width: 220px;
+    width: 140px;
+	height: 60px;
     border: solid 1px #D8D8D8;
     background: #F6F6F6;
     float: left;
+	cursor: pointer;
 }
 
 div.menu-item-title, div.menu-item-price, div.menu-item-actions {
-    float: left;
+    float: top;
 }
 
 div.menu-item-title {
-    width: calc(100% - 55px);
+    width: 100%;
+	font-size: large;
 }
 
 div.menu-item-price {
     min-width: 55px;
     text-align: right;
+	font-size: large;
+	color: darkred;
 }
 
 div.menu-item-note {

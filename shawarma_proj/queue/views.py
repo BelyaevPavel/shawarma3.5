@@ -7,10 +7,12 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Max, Count, Avg, F
 from hashlib import md5
-from shawarma.settings import TIME_ZONE, LISTNER_URL
+from shawarma.settings import TIME_ZONE, LISTNER_URL,PRINTER_URL
 import requests
 import datetime
 import json
+import os
+import subprocess
 
 
 @login_required()
@@ -36,13 +38,13 @@ def welcomer(request):
 
 @login_required()
 def menu(request):
-    menu_items = Menu.objects.order_by('price')
+    menu_items = Menu.objects.order_by('title')
     template = loader.get_template('queue/menu_page.html')
     context = {
         'user': request.user,
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'menu_items': menu_items,
-        'menu_categories': MenuCategory.objects.all()
+        'menu_categories': MenuCategory.objects.order_by('weight')
     }
     return HttpResponse(template.render(context, request))
 
@@ -169,6 +171,7 @@ def production_queue(request):
     return HttpResponse(template.render(context, request))
 
 
+@login_required()
 def cook_interface(request):
     user = request.user
     user_avg_prep_duration = OrderContent.objects.filter(staff_maker__user=user, start_timestamp__isnull=False,
@@ -292,11 +295,15 @@ def print_order(request, order_id):
     order_content = OrderContent.objects.filter(order_id=order_id).values('menu_item__title',
                                                                           'menu_item__price').annotate(
         count=Count('menu_item__title'))
-    template = loader.get_template('queue/print_order.html')
+    template = loader.get_template('queue/print_order_wh.html')
     context = {
         'order_info': order_info,
         'order_content': order_content
     }
+    print "{}".format('echo "{}"'.format(template.render(context, request)) + " | lp -h " + PRINTER_URL)
+    print u'echo "ыартго"'.encode('ascii')
+    os.system('echo "ыартго"'.encode('ascii'))
+    #subprocess.call(['echo', '"ыартго"'])
     return HttpResponse(template.render(context, request))
 
 
@@ -306,7 +313,6 @@ def make_order(request):
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
-    print u"Paid: {}; Cash: {}".format(is_paid, paid_with_cash);
     order_next_number = 0
     order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
         Max('daily_number'))
@@ -343,6 +349,7 @@ def make_order(request):
     order.save()
     # if order.is_paid:
     print "Sending request to " + LISTNER_URL
+    print order
     requests.post(LISTNER_URL, json=prepare_json_check(order))
     print "Request sended."
     data["total"] = order.total
@@ -716,7 +723,7 @@ def prepare_json_check(order):
         },
         "ПометкаУдаления": False,
         "Дата": {
-            "TYPE": "Дата",
+            "TYPE": "ДДДДДД",
             "UID": None
         },
         "Номер": "ЯЯЯЯЯЯ",
@@ -741,7 +748,7 @@ def prepare_json_check(order):
             "TYPE": "СправочникСсылка.Магазины",
             "UID": "cc442ddb-767b-11e6-82c6-28c2dd30392b"
         },
-        "НомерЧекаККМ": 6036,
+        "НомерЧекаККМ": None,
         "Организация": {
             "TYPE": "СправочникСсылка.Организации",
             "UID": "1d68a28e-767b-11e6-82c6-28c2dd30392b"

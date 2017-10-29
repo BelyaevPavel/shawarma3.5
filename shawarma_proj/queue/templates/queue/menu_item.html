@@ -1,4 +1,4 @@
-<div class="menu-item" category="{{ menu_item.category.eng_title }}">
+<div class="menu-item" category="{{ menu_item.category.eng_title }}" onclick="AddOne({{ menu_item.id }}, '{{ menu_item.title }}', {{ menu_item.price }})">
     <div class="menu-item-details">
         <div class="menu-item-title">
             {{ menu_item.title }}
@@ -6,14 +6,5 @@
         <div class="menu-item-price">
             {{ menu_item.price }} р.
         </div>
-        <div class="menu-item-actions">
-            <input type="text" class="quantityInput" id="count-{{ menu_item.id }}" value="1">
-            <button class="btnAdd" onclick="Add({{ menu_item.id }}, '{{ menu_item.title }}', {{ menu_item.price }})">
-                Добавить
-            </button>
-        </div>
-    </div>
-    <div class="menu-item-note">
-        <input type="text" class="note-input" id="note-{{ menu_item.id }}" placeholder="Примечание">
     </div>
 </div>
