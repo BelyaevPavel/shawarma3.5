@@ -1,0 +1,20 @@
+{% extends 'queue/base.html' %}
+{% block aditional_static %}
+    {% load static %}
+    <script type="text/javascript" src="{% static 'js/cook_interface_alt_handlers.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <input hidden id="urls" data-take-url="{% url 'take' %}" data-grill-url="{% url 'to_grill' %}"
+           data-finish-url="{% url 'finish_cooking' %}" data-grill-timer-url="{% url 'grill_timer' %}"
+           data-next-url="{% url 'next_to_prepare' %}">
+
+    {% for content_item in order_content %}
+        <div>
+            <div class="next-to-prepare-item" onclick="TakeItem({{ next_product.id }})">
+                content_item.menu_item.title
+            </div>
+        </div>
+    {% empty %}
+        No items.
+    {% endfor %}
+{% endblock %}
