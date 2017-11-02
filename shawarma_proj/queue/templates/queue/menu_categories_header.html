@@ -1,0 +1,14 @@
+{% load static %}
+<div class="menu-header-div-container fixed">
+    <div class="menu-header-div">
+	{% if menu_categories %}
+		{% for menu_category in menu_categories %}
+		        <div class="menu-header-buttons" onclick="ChangeCategory('{{ menu_category.eng_title }}')">
+		                {{ menu_category.title }}
+			</div>
+		{% endfor %}
+	{% else %}
+		<p>В меню пусто.</p>
+	{% endif %}
+    </div>
+</div>

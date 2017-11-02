@@ -3,6 +3,7 @@
  */
 $(document).ready(function () {
     $('#menu').addClass('active');
+    $('.menu-item').hide();
 });
 
 var currOrder = [];
@@ -10,17 +11,15 @@ var total = 0;
 var res = ""
 var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 
-$('.next-to-prepare-item').on
-
 $(function () {
     $('.subm').on('click', function (event) {
         var confirmation = confirm("Подтвердить заказ?");
         var form = $('.subm');
         var is_paid = true;
-        if ($('#is_paid').attr('checked') != 'checked')
+        if ($('#is_paid').is(':checked'))
             is_paid = false;
         var paid_with_cash = true;
-        if ($('#paid_with_cash').attr('checked') != 'checked')
+        if ($('#paid_with_cash').is(':checked'))
             paid_with_cash = false;
         if (confirmation == true) {
             $.ajaxSetup({
@@ -33,8 +32,8 @@ $(function () {
                     url: form.attr('data-send-url'),
                     data: {
                         "order_content": JSON.stringify(currOrder),
-                        "is_paid": JSON.stringify(is_paid),
-                        "paid_with_cash": JSON.stringify(paid_with_cash)
+                        "is_paid": JSON.stringify($('#is_paid').is(':checked')),
+                        "paid_with_cash": JSON.stringify($('#paid_with_cash').is(':checked'))
                     },
                     dataType: 'json',
                     success: function (data) {
@@ -63,6 +62,39 @@ function Remove(index) {
         currOrder[index]['quantity'] = parseInt(currOrder[index]['quantity']) - parseInt(quantity);
     CalculateTotal();
     DrawOrderTable();
+}
+
+function AddOne(id, title, price) {
+    var quantity = 1;
+    var note = '';
+    var index = FindItem(id, note);
+    if (index == null) {
+        currOrder.push(
+            {
+                'id': id,
+                'title': title,
+                'price': price,
+                'quantity': quantity,
+                'note': note
+            }
+        );
+    }
+    else {
+        currOrder[index]['quantity'] = parseInt(quantity) + parseInt(currOrder[index]['quantity']);
+    }
+    CalculateTotal();
+    DrawOrderTable();
+}
+
+function EditNote(id, note) {
+	var newnote = prompt("Комментарий", note);
+	if (newnote != null) {
+		var index = FindItem(id, note);
+		if (index != null){
+			currOrder[index]['note'] = newnote;
+		}
+	}
+	DrawOrderTable();
 }
 
 function Add(id, title, price) {
@@ -104,7 +136,7 @@ function DrawOrderTable() {
     $('table.currentOrderTable tbody tr').remove();
     for (var i = 0; i < currOrder.length; i++) {
         $('table.currentOrderTable').append(
-            '<tr class="currentOrderRow" index="' + i + '"><td class="currentOrderTitleCell">' +
+            '<tr class="currentOrderRow" index="' + i + '"><td class="currentOrderTitleCell" onclick="EditNote(' + currOrder[i]['id'] + ',\'' + currOrder[i]['note'] + '\')">' +
             '<div>' + currOrder[i]['title'] + '</div><div class="noteText">' + currOrder[i]['note'] + '</div>' +
             '</td><td class="currentOrderActionCell">' + 'x' + currOrder[i]['quantity'] +
             '<input type="text" value="1" class="quantityInput" id="count-to-remove-' + i + '">' +
@@ -120,4 +152,9 @@ function CalculateTotal() {
         total += currOrder[i]['price'] * currOrder[i]['quantity'];
     }
     $('p.totalDisplay').text(total);
+}
+
+function ChangeCategory(category) {
+    $('.menu-item').hide();
+    $('[category='+category+']').show();
 }

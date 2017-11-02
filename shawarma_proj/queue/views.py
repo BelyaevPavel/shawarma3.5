@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from .models import Menu, Order, Staff, StaffCategory, OrderContent
+from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent
 from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Max, Count, Avg, F
 from hashlib import md5
-from shawarma.settings import TIME_ZONE, LISTNER_URL
+from shawarma.settings import TIME_ZONE, LISTNER_URL,PRINTER_URL
 import requests
 import datetime
 import json
+import os
+import subprocess
 
 
 @login_required()
@@ -36,12 +38,13 @@ def welcomer(request):
 
 @login_required()
 def menu(request):
-    menu_items = Menu.objects.order_by('price')
+    menu_items = Menu.objects.order_by('title')
     template = loader.get_template('queue/menu_page.html')
     context = {
         'user': request.user,
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'menu_items': menu_items,
+        'menu_categories': MenuCategory.objects.order_by('weight')
     }
     return HttpResponse(template.render(context, request))
 
@@ -168,6 +171,7 @@ def production_queue(request):
     return HttpResponse(template.render(context, request))
 
 
+@login_required()
 def cook_interface(request):
     def new_processor(request):
         user = request.user
@@ -335,11 +339,15 @@ def print_order(request, order_id):
     order_content = OrderContent.objects.filter(order_id=order_id).values('menu_item__title',
                                                                           'menu_item__price').annotate(
         count=Count('menu_item__title'))
-    template = loader.get_template('queue/print_order.html')
+    template = loader.get_template('queue/print_order_wh.html')
     context = {
         'order_info': order_info,
         'order_content': order_content
     }
+    print "{}".format('echo "{}"'.format(template.render(context, request)) + " | lp -h " + PRINTER_URL)
+    print u'echo "ыартго"'.encode('ascii')
+    os.system('echo "ыартго"'.encode('ascii'))
+    #subprocess.call(['echo', '"ыартго"'])
     return HttpResponse(template.render(context, request))
 
 
@@ -383,9 +391,11 @@ def make_order(request):
 
     order.total = total
     order.save()
-    prepare_json_check(order)
-    #if order.is_paid:
-    #    requests.post(LISTNER_URL, json=prepare_json_check(order))
+    # if order.is_paid:
+    print "Sending request to " + LISTNER_URL
+    print order
+    requests.post(LISTNER_URL, json=prepare_json_check(order))
+    print "Request sended."
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
     return JsonResponse(data)
@@ -516,7 +526,6 @@ def take(request):
             product.staff_maker = staff_maker
             product.start_timestamp = datetime.datetime.now()
             product.save()
-
             data = {
                 'success': True
             }
@@ -689,13 +698,9 @@ def prepare_json_check(order):
                                                                 'menu_item__price', 'order__paid_with_cash').annotate(
         total=Count('menu_item__title'))
     rows = []
+    pay_rows = []
     number = 1
-    sum = 0
-    payment_type_uid = ""
-    if aux_query[0]['order__paid_with_cash']:
-        payment_type_uid = "5715e4bd-767b-11e6-82c6-28c2dd30392b"
-    else:
-        payment_type_uid = ""
+    sum = 0    
     for item in aux_query:
         rows.append({
             u"НомерСтроки": number,
@@ -723,21 +728,49 @@ def prepare_json_check(order):
         })
         number += 1
         sum += item['menu_item__price'] * item['total']
+
+    
+    print u"Cash: {}".format(aux_query[0]['order__paid_with_cash']);
+    if aux_query[0]['order__paid_with_cash']:
+	pay_rows.append({
+            u"НомерСтроки": 1,
+            u"ВидОплаты": {
+                "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
+                "UID": "5715e4bd-767b-11e6-82c6-28c2dd30392b"
+            },
+            u"Сумма": sum,
+            u"ДанныеПереданыВБанк": False
+        })
+    else:
+        pay_rows.append({
+            u"НомерСтроки": 1,
+            u"ВидОплаты": {
+                "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
+                "UID": "8414dfc8-7683-11e6-8251-002215bf2d6a"
+            },
+            u"ЭквайринговыйТерминал": {
+                "TYPE": "СправочникСсылка.ЭквайринговыеТерминалы",
+                "UID": "8414dfc9-7683-11e6-8251-002215bf2d6a"
+            },
+            u"Сумма": sum,
+            u"ДанныеПереданыВБанк": False
+        })
+
     aux_dict = {
         "OBJECT": True,
         "NEW": "Документы.ЧекККМ.СоздатьДокумент()",
         "SAVE": True,
-        "Проведен": True,
+        "Проведен": False,
         "Ссылка": {
             "TYPE": "ДокументСсылка.ЧекККМ",
-            "UID": "0000-0000-0000-0000-0000"
+            "UID": "0000-0000-0000-0000"
         },
         "ПометкаУдаления": False,
         "Дата": {
-            "TYPE": "Дата",
+            "TYPE": "ДДДДДД",
             "UID": None
         },
-        "Номер": "0000-ЯЯЯЯЯЯ",
+        "Номер": "ЯЯЯЯЯЯ",
         "АналитикаХозяйственнойОперации": {
             "TYPE": "СправочникСсылка.АналитикаХозяйственныхОпераций",
             "UID": "5715e4c9-767b-11e6-82c6-28c2dd30392b"
@@ -759,7 +792,7 @@ def prepare_json_check(order):
             "TYPE": "СправочникСсылка.Магазины",
             "UID": "cc442ddb-767b-11e6-82c6-28c2dd30392b"
         },
-        "НомерЧекаККМ": 6036,
+        "НомерЧекаККМ": None,
         "Организация": {
             "TYPE": "СправочникСсылка.Организации",
             "UID": "1d68a28e-767b-11e6-82c6-28c2dd30392b"
@@ -769,15 +802,7 @@ def prepare_json_check(order):
             "UID": "1d68a28d-767b-11e6-82c6-28c2dd30392b"
         },
         "ОтработанПереход": False,
-        "ОтчетОРозничныхПродажах": {
-            "TYPE": "ДокументСсылка.ОтчетОРозничныхПродажах",
-            "UID": "1f1b7ecd-8760-11e7-82a6-002215bf2d6a"
-        },
         "СкидкиРассчитаны": True,
-        "СтатусЧекаККМ": {
-            "TYPE": "ПеречислениеСсылка.СтатусыЧековККМ",
-            "UID": "Архивный"
-        },
         "СуммаДокумента": sum,
         "ЦенаВключаетНДС": False,
         "ОперацияСДенежнымиСредствами": False,
@@ -834,18 +859,8 @@ def prepare_json_check(order):
                 "ДоговорПлатежногоАгента": None,
                 "КлючСвязиОплаты": None
             },
-            "ROWS": [
-                {
-                    "НомерСтроки": 1,
-                    "ВидОплаты": {
-                        "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
-                        "UID": payment_type_uid
-                    },
-                    "Сумма": sum,
-                    "ДанныеПереданыВБанк": False
-                }
-            ]
+            "ROWS": pay_rows
         }
     }
-    print json.dumps(aux_dict)
-    return json.dumps(aux_dict)
+    print "JSON formed!"
+    return json.dumps(aux_dict, ensure_ascii=False)

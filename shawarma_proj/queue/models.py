@@ -6,6 +6,18 @@ from django.db import models
 
 
 # Create your models here.
+class MenuCategory(models.Model):
+    title = models.CharField(max_length=20)
+    eng_title = models.CharField(max_length=20)
+    weight = models.IntegerField(verbose_name="Weight", default=0)
+
+    def __str__(self):
+        return u"{}".format(self.title)
+
+    def __unicode__(self):
+        return u"{}".format(self.title)
+
+
 class StaffCategory(models.Model):
     title = models.CharField(max_length=10)
 
@@ -30,11 +42,12 @@ class Staff(models.Model):
 
 class Menu(models.Model):
     title = models.CharField(max_length=200)
-    note = models.CharField(max_length=500)
+    note = models.CharField(max_length=500, null=False)
     price = models.FloatField(default=0, validators=[MinValueValidator(0, "Price can't be negative!")])
     avg_preparation_time = models.DurationField(verbose_name="Average preparation time.")
     can_be_prepared_by = models.ForeignKey(StaffCategory)
     guid_1c = models.CharField(max_length=100, default="")
+    category = models.ForeignKey(MenuCategory)
 
     def __str__(self):
         return u"{}".format(self.title)

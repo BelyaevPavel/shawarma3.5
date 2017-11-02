@@ -62,7 +62,7 @@ function AdjustLineHeight() {
 
 function TakeItem(id) {
     var url = $('#urls').attr('data-take-url');
-    var confirmation = confirm("Take item?");
+    var confirmation = confirm("Начать готовить?");
     console.log(confirmation);
     if (confirmation) {
         $.ajaxSetup({
@@ -138,7 +138,7 @@ function FinishItemCooking(id) {
             },
             dataType: 'json',
             success: function (data) {
-                alert('Положите в заказ ' + data['order_number']);
+                alert('Положите в заказ №' + data['order_number']);
             },
             complete: function () {
                 location.reload();
