@@ -7,7 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Max, Count, Avg, F
 from hashlib import md5
-from shawarma.settings import TIME_ZONE, LISTNER_URL,PRINTER_URL
+from shawarma.settings import TIME_ZONE, LISTNER_URL, PRINTER_URL
 import requests
 import datetime
 import json
@@ -88,6 +88,8 @@ def current_queue(request):
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                         is_canceled=False, content_completed=True, supplement_completed=True).order_by(
         'open_time')
+    print open_orders
+    print ready_orders
 
     template = loader.get_template('queue/current_queue_grid.html')
     context = {
@@ -114,6 +116,7 @@ def current_queue(request):
         'ready_length': len(ready_orders),
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
     }
+    print context
     return HttpResponse(template.render(context, request))
 
 
@@ -175,6 +178,7 @@ def production_queue(request):
 def cook_interface(request):
     def new_processor(request):
         user = request.user
+        staff = Staff.objects.get(user=user)
         context = None
         order_content = None
         taken_orders = Order.objects.filter(prepared_by__user=user, open_time__isnull=False,
@@ -188,14 +192,16 @@ def cook_interface(request):
 
             if len(free_orders) > 0:
                 free_order = free_orders[0]
-                free_order.prepared_by.user = user
-                order_content = OrderContent.objects.filter(order=free_order)
+                free_order.prepared_by = staff
+                order_content = OrderContent.objects.filter(order=free_order,
+                                                            menu_item__can_be_prepared_by__title__iexact='Cook')
                 context = {
                     'free_order': free_order,
                     'order_content': order_content
                 }
         else:
-            order_content = OrderContent.objects.filter(order=taken_orders[0])
+            order_content = OrderContent.objects.filter(order=taken_orders[0],
+                                                        menu_item__can_be_prepared_by__title__iexact='Cook')
             context = {
                 'free_order': taken_orders,
                 'order_content': order_content
@@ -242,7 +248,8 @@ def cook_interface(request):
                                                        is_canceled=False)
 
         in_grill_dict = [{'product': product,
-                          'time_in_grill': datetime.datetime.now().replace(tzinfo=None) - product.grill_timestamp.replace(
+                          'time_in_grill': datetime.datetime.now().replace(
+                              tzinfo=None) - product.grill_timestamp.replace(
                               tzinfo=None)} for product in in_grill_content]
 
         if len(free_content) > 0:
@@ -347,7 +354,7 @@ def print_order(request, order_id):
     print "{}".format('echo "{}"'.format(template.render(context, request)) + " | lp -h " + PRINTER_URL)
     print u'echo "ыартго"'.encode('ascii')
     os.system('echo "ыартго"'.encode('ascii'))
-    #subprocess.call(['echo', '"ыартго"'])
+    # subprocess.call(['echo', '"ыартго"'])
     return HttpResponse(template.render(context, request))
 
 
@@ -394,7 +401,7 @@ def make_order(request):
     # if order.is_paid:
     print "Sending request to " + LISTNER_URL
     print order
-    requests.post(LISTNER_URL, json=prepare_json_check(order))
+    # requests.post(LISTNER_URL, json=prepare_json_check(order))
     print "Request sended."
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
@@ -518,6 +525,7 @@ def next_to_prepare(request):
 @login_required()
 @permission_required('queue.can_cook')
 def take(request):
+    print 'Trying to take 1.'
     product_id = request.POST.get('id', None)
     if product_id:
         product = OrderContent.objects.get(id=product_id)
@@ -532,8 +540,9 @@ def take(request):
         else:
             data = {
                 'success': False,
-                'staff_maker': u'{} {}'.format(request.user.first_name, request.user.last_name)
+                'staff_maker': 'TEST_MAKER'
             }
+    print 'Trying to take 2.'
 
     return JsonResponse(data)
 
@@ -700,7 +709,7 @@ def prepare_json_check(order):
     rows = []
     pay_rows = []
     number = 1
-    sum = 0    
+    sum = 0
     for item in aux_query:
         rows.append({
             u"НомерСтроки": number,
@@ -729,10 +738,9 @@ def prepare_json_check(order):
         number += 1
         sum += item['menu_item__price'] * item['total']
 
-    
     print u"Cash: {}".format(aux_query[0]['order__paid_with_cash']);
     if aux_query[0]['order__paid_with_cash']:
-	pay_rows.append({
+        pay_rows.append({
             u"НомерСтроки": 1,
             u"ВидОплаты": {
                 "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
