@@ -1,4 +1,5 @@
-Number {{ order_info.daily_number }} {{ order_info.open_time }}
+Заказ №: {{ order_info.daily_number }} 
+{{ order_info.open_time }}
 {% for item in order_content %}
     {{ item.menu_item__title }} x{{ item.count }} {{ item.menu_item__price }}
 {% endfor %}

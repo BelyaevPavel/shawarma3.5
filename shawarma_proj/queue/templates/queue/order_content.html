@@ -30,6 +30,10 @@
                 {% endif %}">
                     {{ order_item.menu_item }}
                 </div>
+                <div class="order-item-note {% if order_item.finish_timestamp %}ready
+                {% endif %}">
+                    {{ order_item.note }}
+                </div>
                 <div class="order-item-maker {% if order_item.finish_timestamp %}ready
                 {% endif %}">
                     {{ order_item.staff_maker }}

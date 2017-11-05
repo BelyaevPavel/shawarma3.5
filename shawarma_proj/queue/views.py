@@ -300,10 +300,11 @@ def print_order(request, order_id):
         'order_info': order_info,
         'order_content': order_content
     }
-    print "{}".format('echo "{}"'.format(template.render(context, request)) + " | lp -h " + PRINTER_URL)
-    print u'echo "ыартго"'.encode('ascii')
-    os.system('echo "ыартго"'.encode('ascii'))
-    #subprocess.call(['echo', '"ыартго"'])
+    
+    cmd = 'echo "{}"'.format(template.render(context, request)) + " | lp -h " + PRINTER_URL
+    scmd = cmd.encode('utf-8')
+    os.system(scmd)
+
     return HttpResponse(template.render(context, request))
 
 
@@ -685,6 +686,8 @@ def prepare_json_check(order):
         number += 1
         sum += item['menu_item__price'] * item['total']
 
+    cook_name = u"Иван"
+    order_number = str(333)
     
     print u"Cash: {}".format(aux_query[0]['order__paid_with_cash']);
     if aux_query[0]['order__paid_with_cash']:
@@ -816,7 +819,9 @@ def prepare_json_check(order):
                 "КлючСвязиОплаты": None
             },
             "ROWS": pay_rows
-        }
+        },
+        "Повар": cook_name,
+        "НомерОчереди": order_number
     }
     print "JSON formed!"
     return json.dumps(aux_dict, ensure_ascii=False)

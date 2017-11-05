@@ -7,10 +7,10 @@
     {% endif %}">
         <div class="order-block-header">
             <div class="order-number  {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}ready{% endif %}">
-                № {{ open_order.order.daily_number }}
+                <a href="{% url 'order_content' open_order.order.id %}">№ {{ open_order.order.daily_number }}</a>
             </div>
             <div class="order-cook-part  {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}ready{% endif %}">
-                ({{ open_order.cook_part_ready_count.count }}/{{ open_order.cook_part_count.count }})
+                <a href="{% url 'order_content' open_order.order.id %}">({{ open_order.cook_part_ready_count.count }}/{{ open_order.cook_part_count.count }})</a>
             </div>
             <div class="order-block-actions">
                 {% if staff_category.title == 'Operator' %}
