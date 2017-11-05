@@ -508,3 +508,11 @@ div.login-form input {
 div.login-form button {
     font-size: larger;
 }
+
+div.cook-order-item {
+    line-height: 40px;
+    height: 40px;
+    border-bottom: solid 1px #D8D8D8;
+    border-top: solid 1px #D8D8D8;
+    cursor: pointer;
+}

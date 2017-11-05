@@ -7,7 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Max, Count, Avg, F
 from hashlib import md5
-from shawarma.settings import TIME_ZONE, LISTNER_URL,PRINTER_URL
+from shawarma.settings import TIME_ZONE, LISTNER_URL, PRINTER_URL
 import requests
 import datetime
 import json
@@ -88,6 +88,8 @@ def current_queue(request):
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                         is_canceled=False, content_completed=True, supplement_completed=True).order_by(
         'open_time')
+    print open_orders
+    print ready_orders
 
     template = loader.get_template('queue/current_queue_grid.html')
     context = {
@@ -114,6 +116,7 @@ def current_queue(request):
         'ready_length': len(ready_orders),
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
     }
+    print context
     return HttpResponse(template.render(context, request))
 
 
@@ -173,95 +176,143 @@ def production_queue(request):
 
 @login_required()
 def cook_interface(request):
-    user = request.user
-    user_avg_prep_duration = OrderContent.objects.filter(staff_maker__user=user, start_timestamp__isnull=False,
-                                                         finish_timestamp__isnull=False).values(
-        'menu_item__id').annotate(
-        production_duration=Avg(F('finish_timestamp') - F('start_timestamp'))).order_by('production_duration')
+    def new_processor(request):
+        user = request.user
+        staff = Staff.objects.get(user=user)
+        context = None
+        order_content = None
+        taken_orders = Order.objects.filter(prepared_by__user=user, open_time__isnull=False,
+                                            close_time__isnull=True)
+        has_order = False
+        if len(taken_orders) > 0:
+            has_order = True
 
-    available_cook_count = Staff.objects.filter(user__last_login__contains=datetime.date.today(),
-                                                staff_category__title__iexact='cook').aggregate(
-        Count('id'))  # Change to logged.
+        if not has_order:
+            free_orders = Order.objects.filter(prepared_by=None).order_by('open_time')
 
-    free_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
-                                               order__close_time__isnull=True,
-                                               order__is_canceled=False,
-                                               menu_item__can_be_prepared_by__title__iexact='cook',
-                                               start_timestamp__isnull=True).order_by(
-        'order__open_time')[:available_cook_count['id__count']]
+            if len(free_orders) > 0:
+                free_order = free_orders[0]
+                free_order.prepared_by = staff
+                order_content = OrderContent.objects.filter(order=free_order,
+                                                            menu_item__can_be_prepared_by__title__iexact='Cook')
+                context = {
+                    'free_order': free_order,
+                    'order_content': order_content
+                }
+        else:
+            order_content = OrderContent.objects.filter(order=taken_orders[0],
+                                                        menu_item__can_be_prepared_by__title__iexact='Cook')
+            context = {
+                'free_order': taken_orders,
+                'order_content': order_content
+            }
 
-    in_progress_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
-                                                      order__close_time__isnull=True,
-                                                      order__is_canceled=False,
-                                                      start_timestamp__isnull=False,
-                                                      finish_timestamp__isnull=True,
-                                                      staff_maker__user=user,
-                                                      is_in_grill=False,
-                                                      is_canceled=False).order_by(
-        'order__open_time')[:1]
+        template = loader.get_template('queue/cook_interface_alt.html')
+        return HttpResponse(template.render(context, request))
 
-    in_grill_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
+    def old_processor(request):
+        user = request.user
+        user_avg_prep_duration = OrderContent.objects.filter(staff_maker__user=user, start_timestamp__isnull=False,
+                                                             finish_timestamp__isnull=False).values(
+            'menu_item__id').annotate(
+            production_duration=Avg(F('finish_timestamp') - F('start_timestamp'))).order_by('production_duration')
+
+        available_cook_count = Staff.objects.filter(user__last_login__contains=datetime.date.today(),
+                                                    staff_category__title__iexact='cook').aggregate(
+            Count('id'))  # Change to logged.
+
+        free_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
                                                    order__close_time__isnull=True,
                                                    order__is_canceled=False,
-                                                   start_timestamp__isnull=False,
-                                                   finish_timestamp__isnull=True,
-                                                   staff_maker__user=user,
-                                                   is_in_grill=True,
-                                                   is_canceled=False)
+                                                   menu_item__can_be_prepared_by__title__iexact='cook',
+                                                   start_timestamp__isnull=True).order_by(
+            'order__open_time')[:available_cook_count['id__count']]
 
-    in_grill_dict = [{'product': product,
-                      'time_in_grill': datetime.datetime.now().replace(tzinfo=None) - product.grill_timestamp.replace(
-                          tzinfo=None)} for product in in_grill_content]
+        in_progress_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
+                                                          order__close_time__isnull=True,
+                                                          order__is_canceled=False,
+                                                          start_timestamp__isnull=False,
+                                                          finish_timestamp__isnull=True,
+                                                          staff_maker__user=user,
+                                                          is_in_grill=False,
+                                                          is_canceled=False).order_by(
+            'order__open_time')[:1]
 
-    if len(free_content) > 0:
-        if len(in_progress_content) == 0:
-            free_content_ids = [content.id for content in free_content]
-            id_to_prepare = -1
-            for product in user_avg_prep_duration:
-                if product['menu_item__id'] in free_content_ids:
-                    id_to_prepare = product['menu_item__id']
-                    break
+        in_grill_content = OrderContent.objects.filter(order__open_time__contains=datetime.date.today(),
+                                                       order__close_time__isnull=True,
+                                                       order__is_canceled=False,
+                                                       start_timestamp__isnull=False,
+                                                       finish_timestamp__isnull=True,
+                                                       staff_maker__user=user,
+                                                       is_in_grill=True,
+                                                       is_canceled=False)
 
-            if id_to_prepare == -1:
-                id_to_prepare = free_content_ids[0]
+        in_grill_dict = [{'product': product,
+                          'time_in_grill': datetime.datetime.now().replace(
+                              tzinfo=None) - product.grill_timestamp.replace(
+                              tzinfo=None)} for product in in_grill_content]
 
-            context = {
-                'next_product': OrderContent.objects.get(id=id_to_prepare),
-                'in_progress': None,
-                'in_grill': in_grill_dict,
-                'current_time': datetime.datetime.now(),
-                'staff_category': StaffCategory.objects.get(staff__user=request.user),
-            }
+        if len(free_content) > 0:
+            if len(in_progress_content) == 0:
+                free_content_ids = [content.id for content in free_content]
+                id_to_prepare = -1
+                for product in user_avg_prep_duration:
+                    if product['menu_item__id'] in free_content_ids:
+                        id_to_prepare = product['menu_item__id']
+                        break
+
+                if id_to_prepare == -1:
+                    id_to_prepare = free_content_ids[0]
+
+                context = {
+                    'next_product': OrderContent.objects.get(id=id_to_prepare),
+                    'in_progress': None,
+                    'in_grill': in_grill_dict,
+                    'current_time': datetime.datetime.now(),
+                    'staff_category': StaffCategory.objects.get(staff__user=request.user),
+                }
+            else:
+                context = {
+                    'next_product': None,
+                    'in_progress': in_progress_content[0],
+                    'in_grill': in_grill_dict,
+                    'current_time': datetime.datetime.now(),
+                    'staff_category': StaffCategory.objects.get(staff__user=request.user),
+                }
         else:
-            context = {
-                'next_product': None,
-                'in_progress': in_progress_content[0],
-                'in_grill': in_grill_dict,
-                'current_time': datetime.datetime.now(),
-                'staff_category': StaffCategory.objects.get(staff__user=request.user),
-            }
-    else:
-        if len(in_progress_content) != 0:
-            context = {
-                'next_product': None,
-                'in_progress': in_progress_content[0],
-                'in_grill': in_grill_dict,
-                'current_time': datetime.datetime.now(),
-                'staff_category': StaffCategory.objects.get(staff__user=request.user),
+            if len(in_progress_content) != 0:
+                context = {
+                    'next_product': None,
+                    'in_progress': in_progress_content[0],
+                    'in_grill': in_grill_dict,
+                    'current_time': datetime.datetime.now(),
+                    'staff_category': StaffCategory.objects.get(staff__user=request.user),
 
-            }
-        else:
-            context = {
-                'next_product': None,
-                'in_progress': None,
-                'in_grill': in_grill_dict,
-                'current_time': datetime.datetime.now(),
-                'staff_category': StaffCategory.objects.get(staff__user=request.user),
+                }
+            else:
+                context = {
+                    'next_product': None,
+                    'in_progress': None,
+                    'in_grill': in_grill_dict,
+                    'current_time': datetime.datetime.now(),
+                    'staff_category': StaffCategory.objects.get(staff__user=request.user),
 
-            }
+                }
 
-    template = loader.get_template('queue/cook_interface.html')
-    return HttpResponse(template.render(context, request))
+        template = loader.get_template('queue/cook_interface.html')
+        return HttpResponse(template.render(context, request))
+
+    return new_processor(request)
+
+
+@login_required()
+@permission_required('queue.change_order')
+def set_cooker(request, order_id, cooker_id):
+    order = Order.objects.get_object_or_404(id=order_id)
+    cooker = Staff.objects.get_object_or_404(id=cooker_id)
+    order.prepared_by = cooker
+
+    return JsonResponse(data={'success': True})
 
 
 @login_required()
@@ -304,6 +355,7 @@ def print_order(request, order_id):
     cmd = 'echo "{}"'.format(template.render(context, request)) + " | lp -h " + PRINTER_URL
     scmd = cmd.encode('utf-8')
     os.system(scmd)
+
 
     return HttpResponse(template.render(context, request))
 
@@ -351,7 +403,7 @@ def make_order(request):
     # if order.is_paid:
     print "Sending request to " + LISTNER_URL
     print order
-    requests.post(LISTNER_URL, json=prepare_json_check(order))
+    # requests.post(LISTNER_URL, json=prepare_json_check(order))
     print "Request sended."
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
@@ -475,6 +527,7 @@ def next_to_prepare(request):
 @login_required()
 @permission_required('queue.can_cook')
 def take(request):
+    print 'Trying to take 1.'
     product_id = request.POST.get('id', None)
     if product_id:
         product = OrderContent.objects.get(id=product_id)
@@ -489,8 +542,9 @@ def take(request):
         else:
             data = {
                 'success': False,
-                'staff_maker': u'{} {}'.format(request.user.first_name, request.user.last_name)
+                'staff_maker': 'TEST_MAKER'
             }
+    print 'Trying to take 2.'
 
     return JsonResponse(data)
 
@@ -657,7 +711,7 @@ def prepare_json_check(order):
     rows = []
     pay_rows = []
     number = 1
-    sum = 0    
+    sum = 0
     for item in aux_query:
         rows.append({
             u"НомерСтроки": number,
@@ -691,7 +745,7 @@ def prepare_json_check(order):
     
     print u"Cash: {}".format(aux_query[0]['order__paid_with_cash']);
     if aux_query[0]['order__paid_with_cash']:
-	pay_rows.append({
+        pay_rows.append({
             u"НомерСтроки": 1,
             u"ВидОплаты": {
                 "TYPE": "СправочникСсылка.ВидыОплатЧекаККМ",
