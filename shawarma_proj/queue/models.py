@@ -31,6 +31,7 @@ class StaffCategory(models.Model):
 class Staff(models.Model):
     staff_category = models.ForeignKey(StaffCategory)
     available = models.BooleanField(default="False")
+    super_guy = models.BooleanField(default="False")
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):

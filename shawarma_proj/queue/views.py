@@ -181,29 +181,48 @@ def cook_interface(request):
         staff = Staff.objects.get(user=user)
         context = None
         order_content = None
-        taken_orders = Order.objects.filter(prepared_by__user=user, open_time__isnull=False,
-                                            close_time__isnull=True)
+        taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
+					    open_time__contains=datetime.date.today(), is_canceled=False, content_completed=False,
+                                            close_time__isnull=True),
         has_order = False
-        if len(taken_orders) > 0:
-            has_order = True
+        if taken_orders[0]:
+            order_content = OrderContent.objects.filter(order=taken_orders[0][0], menu_item__can_be_prepared_by__title__iexact='Cook', finish_timestamp__isnull=True)
+            if len(order_content) > 0:
+                has_order = True
+	print "Orders: {}".format(taken_orders)
+	print "Order: {}".format(taken_orders[0][0])
+	print "Has order: {}. Content compleated: {}".format(has_order, taken_orders[0][0].content_completed)
 
         if not has_order:
-            free_orders = Order.objects.filter(prepared_by=None).order_by('open_time')
+            free_orders = Order.objects.filter(prepared_by__isnull=True, is_canceled=False,
+					       open_time__contains=datetime.date.today()).order_by('open_time')
 
             if len(free_orders) > 0:
+                for order in free_orders:
+		    print "Free orders: {}".format(order.prepared_by)
                 free_order = free_orders[0]
-                free_order.prepared_by = staff
                 order_content = OrderContent.objects.filter(order=free_order,
                                                             menu_item__can_be_prepared_by__title__iexact='Cook')
-                context = {
-                    'free_order': free_order,
-                    'order_content': order_content
-                }
+                # ALERT! Only SuperGuy can handle this amount of shawarma!!!
+                if len(order_content) > 6:
+                    if staff.super_guy:
+                        free_order.prepared_by = staff
+                else:
+                    free_order.prepared_by = staff
+                
+                free_order.save()
+
+                if free_order.prepared_by == staff:
+                    print "Free orders prepared_by: {}".format(free_order.prepared_by)
+                    context = {
+                        'free_order': free_order,
+                        'order_content': order_content
+                    }
         else:
             order_content = OrderContent.objects.filter(order=taken_orders[0],
                                                         menu_item__can_be_prepared_by__title__iexact='Cook')
             context = {
-                'free_order': taken_orders,
+                'free_order': taken_orders[0],
                 'order_content': order_content
             }
 
@@ -302,7 +321,7 @@ def cook_interface(request):
         template = loader.get_template('queue/cook_interface.html')
         return HttpResponse(template.render(context, request))
 
-    return new_processor(request)
+    return old_processor(request)
 
 
 @login_required()
@@ -740,8 +759,8 @@ def prepare_json_check(order):
         number += 1
         sum += item['menu_item__price'] * item['total']
 
-    cook_name = u"Иван"
-    order_number = str(333)
+    cook_name = u"{}".format(order.prepared_by)
+    order_number = str(order.daily_number)
     
     print u"Cash: {}".format(aux_query[0]['order__paid_with_cash']);
     if aux_query[0]['order__paid_with_cash']:

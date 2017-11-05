@@ -7,7 +7,7 @@
     <input hidden id="urls" data-take-url="{% url 'take' %}" data-grill-url="{% url 'to_grill' %}"
            data-finish-url="{% url 'finish_cooking' %}" data-grill-timer-url="{% url 'grill_timer' %}"
            data-next-url="{% url 'next_to_prepare' %}">
-
+<div> {{ free_order.daily_number }} {{ free_order.prepared_by }} </div>
     {% for content_item in order_content %}
         <div>
             <div class="cook-order-item
@@ -22,12 +22,12 @@
 
                     {% else %}
                         {% if content_item.start_timestamp is not None %}
-                            FinishItemCooking('{{ content_item.id }}')
+                            FinishItemCooking({{ content_item.id }})
                         {% else %}
-                            TakeItem('{{ content_item.id }}')
+                            TakeItem({{ content_item.id }})
                         {% endif %}
                     {% endif %}">
-                {{ content_item.menu_item.title }}
+                {{ content_item.menu_item.title }} {{ content_item.finish_timestamp }}
             </div>
         </div>
     {% empty %}
