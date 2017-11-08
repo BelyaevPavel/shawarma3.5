@@ -42,6 +42,7 @@ def menu(request):
     template = loader.get_template('queue/menu_page.html')
     context = {
         'user': request.user,
+        'available_cookers': Staff.objects.filter(user__last_login__contains=datetime.datetime.now()),
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'menu_items': menu_items,
         'menu_categories': MenuCategory.objects.order_by('weight')
@@ -180,50 +181,53 @@ def cook_interface(request):
         user = request.user
         staff = Staff.objects.get(user=user)
         context = None
-        order_content = None
+        taken_order_content = None
         taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
-					    open_time__contains=datetime.date.today(), is_canceled=False, content_completed=False,
+                                            open_time__contains=datetime.date.today(), is_canceled=False,
+                                            content_completed=False,
                                             close_time__isnull=True),
         has_order = False
         if taken_orders[0]:
-            order_content = OrderContent.objects.filter(order=taken_orders[0][0], menu_item__can_be_prepared_by__title__iexact='Cook', finish_timestamp__isnull=True)
-            if len(order_content) > 0:
+            taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook',
+                                                              finish_timestamp__isnull=True)
+            if len(taken_order_content) > 0:
                 has_order = True
-	print "Orders: {}".format(taken_orders)
-	print "Order: {}".format(taken_orders[0][0])
-	print "Has order: {}. Content compleated: {}".format(has_order, taken_orders[0][0].content_completed)
+        # print "Orders: {}".format(taken_orders)
+        # print "Order: {}".format(taken_orders[0][0])
+        # print "Has order: {}. Content compleated: {}".format(has_order, taken_orders[0][0].content_completed)
 
         if not has_order:
             free_orders = Order.objects.filter(prepared_by__isnull=True, is_canceled=False,
-					       open_time__contains=datetime.date.today()).order_by('open_time')
+                                               open_time__contains=datetime.date.today()).order_by('open_time')
 
-            if len(free_orders) > 0:
-                for order in free_orders:
-		    print "Free orders: {}".format(order.prepared_by)
-                free_order = free_orders[0]
-                order_content = OrderContent.objects.filter(order=free_order,
-                                                            menu_item__can_be_prepared_by__title__iexact='Cook')
+            for free_order in free_orders:
+                taken_order_content = OrderContent.objects.filter(order=free_order,
+                                                                  menu_item__can_be_prepared_by__title__iexact='Cook')
                 # ALERT! Only SuperGuy can handle this amount of shawarma!!!
-                if len(order_content) > 6:
+                if len(taken_order_content) > 6:
                     if staff.super_guy:
                         free_order.prepared_by = staff
+                    else:
+                        continue
                 else:
                     free_order.prepared_by = staff
-                
-                free_order.save()
 
                 if free_order.prepared_by == staff:
-                    print "Free orders prepared_by: {}".format(free_order.prepared_by)
+                    free_order.save()
+                    # print "Free orders prepared_by: {}".format(free_order.prepared_by)
                     context = {
                         'free_order': free_order,
-                        'order_content': order_content
+                        'order_content': taken_order_content
                     }
+
+                break
         else:
-            order_content = OrderContent.objects.filter(order=taken_orders[0],
-                                                        menu_item__can_be_prepared_by__title__iexact='Cook')
+            taken_order_content = OrderContent.objects.filter(order=taken_orders[0],
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook')
             context = {
                 'free_order': taken_orders[0],
-                'order_content': order_content
+                'order_content': taken_order_content
             }
 
         template = loader.get_template('queue/cook_interface_alt.html')
@@ -321,7 +325,7 @@ def cook_interface(request):
         template = loader.get_template('queue/cook_interface.html')
         return HttpResponse(template.render(context, request))
 
-    return old_processor(request)
+    return new_processor(request)
 
 
 @login_required()
@@ -351,6 +355,7 @@ def order_content(request, order_id):
     template = loader.get_template('queue/order_content.html')
     context = {
         'order_info': order_info,
+        'maker': order_info.prepared_by,
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'order_content': current_order_content,
         'ready': order_info.content_completed and order_info.supplement_completed
@@ -370,11 +375,10 @@ def print_order(request, order_id):
         'order_info': order_info,
         'order_content': order_content
     }
-    
+
     cmd = 'echo "{}"'.format(template.render(context, request)) + " | lp -h " + PRINTER_URL
     scmd = cmd.encode('utf-8')
     os.system(scmd)
-
 
     return HttpResponse(template.render(context, request))
 
@@ -400,6 +404,24 @@ def make_order(request):
     data = {
         "daily_number": order.daily_number
     }
+    super_guy = Staff.objects.filter(super_guy=True, user__last_login__contains=datetime.datetime.now())
+    cooks = Staff.objects.filter(user__last_login__contains=datetime.datetime.day)
+    min_index = 0
+    min_count = 100
+    for cook_index in range(0, len(cooks)):
+        cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks[cook_index],
+                                                          order__open_time__contains=datetime.datetime.now())
+        if min_count < len(cooks_order_content):
+            min_count = len(cooks_order_content)
+            min_index = cook_index
+
+    if len(super_guy) > 0:
+        if len(content) > 6:
+            order.prepared_by = super_guy[0]
+        else:
+            order.prepared_by = cooks[min_index]
+    else:
+        order.prepared_by = cooks[min_index]
     content_to_send = []
 
     total = 0
@@ -761,7 +783,7 @@ def prepare_json_check(order):
 
     cook_name = u"{}".format(order.prepared_by)
     order_number = str(order.daily_number)
-    
+
     print u"Cash: {}".format(aux_query[0]['order__paid_with_cash']);
     if aux_query[0]['order__paid_with_cash']:
         pay_rows.append({
