@@ -7,7 +7,7 @@
     <input hidden id="urls" data-take-url="{% url 'take' %}" data-grill-url="{% url 'to_grill' %}"
            data-finish-url="{% url 'finish_cooking' %}" data-grill-timer-url="{% url 'grill_timer' %}"
            data-next-url="{% url 'next_to_prepare' %}">
-<div> {{ free_order.daily_number }} {{ free_order.prepared_by }} </div>
+<div> {{ free_order.daily_number }} </div>
     {% for content_item in order_content %}
         <div>
             <div class="cook-order-item

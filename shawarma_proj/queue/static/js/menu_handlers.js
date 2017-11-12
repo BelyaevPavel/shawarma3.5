@@ -33,7 +33,8 @@ $(function () {
                     data: {
                         "order_content": JSON.stringify(currOrder),
                         "is_paid": JSON.stringify($('#is_paid').is(':checked')),
-                        "paid_with_cash": JSON.stringify($('#paid_with_cash').is(':checked'))
+                        "paid_with_cash": JSON.stringify($('#paid_with_cash').is(':checked')),
+                        "cook_choose": $('[name=cook_choose]:checked').val()
                     },
                     dataType: 'json',
                     success: function (data) {

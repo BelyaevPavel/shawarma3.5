@@ -42,7 +42,8 @@ def menu(request):
     template = loader.get_template('queue/menu_page.html')
     context = {
         'user': request.user,
-        'available_cookers': Staff.objects.filter(user__last_login__contains=datetime.datetime.now()),
+        'available_cookers': Staff.objects.filter(user__last_login__contains=datetime.date.today(),
+                                                  staff_category__title__iexact='Cook'),
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'menu_items': menu_items,
         'menu_categories': MenuCategory.objects.order_by('weight')
@@ -218,16 +219,18 @@ def cook_interface(request):
                     # print "Free orders prepared_by: {}".format(free_order.prepared_by)
                     context = {
                         'free_order': free_order,
-                        'order_content': taken_order_content
+                        'order_content': taken_order_content,
+                        'staff_category': staff
                     }
 
                 break
         else:
-            taken_order_content = OrderContent.objects.filter(order=taken_orders[0],
+            taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
                                                               menu_item__can_be_prepared_by__title__iexact='Cook')
             context = {
-                'free_order': taken_orders[0],
-                'order_content': taken_order_content
+                'free_order': taken_orders[0][0],
+                'order_content': taken_order_content,
+                'staff_category': staff
             }
 
         template = loader.get_template('queue/cook_interface_alt.html')
@@ -389,6 +392,7 @@ def make_order(request):
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
+    cook_choose = request.POST['cook_choose']
     order_next_number = 0
     order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
         Max('daily_number'))
@@ -400,29 +404,34 @@ def make_order(request):
 
     order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number, is_paid=is_paid,
                   paid_with_cash=paid_with_cash)
-    order.save()
+    super_guy = Staff.objects.filter(super_guy=True, user__last_login__contains=datetime.date.today(),
+                                     staff_category__title__iexact='Cook')
+    cooks = Staff.objects.filter(user__last_login__contains=datetime.date.today(), staff_category__title__iexact='Cook')
+
     data = {
         "daily_number": order.daily_number
     }
-    super_guy = Staff.objects.filter(super_guy=True, user__last_login__contains=datetime.datetime.now())
-    cooks = Staff.objects.filter(user__last_login__contains=datetime.datetime.day)
-    min_index = 0
-    min_count = 100
-    for cook_index in range(0, len(cooks)):
-        cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks[cook_index],
-                                                          order__open_time__contains=datetime.datetime.now())
-        if min_count < len(cooks_order_content):
-            min_count = len(cooks_order_content)
-            min_index = cook_index
+    if cook_choose == 'auto':
+        min_index = 0
+        min_count = 100
+        for cook_index in range(0, len(cooks)):
+            cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks[cook_index],
+                                                              order__open_time__contains=datetime.date.today())
+            if min_count > len(cooks_order_content):
+                min_count = len(cooks_order_content)
+                min_index = cook_index
 
-    if len(super_guy) > 0:
-        if len(content) > 6:
-            order.prepared_by = super_guy[0]
+        if len(super_guy) > 0:
+            if len(content) > 6:
+                order.prepared_by = super_guy[0]
+            else:
+                order.prepared_by = cooks[min_index]
         else:
             order.prepared_by = cooks[min_index]
     else:
-        order.prepared_by = cooks[min_index]
+        order.prepared_by = Staff.objects.get(id=int(cook_choose))
     content_to_send = []
+    order.save()
 
     total = 0
     for item in content:
@@ -444,7 +453,7 @@ def make_order(request):
     # if order.is_paid:
     print "Sending request to " + LISTNER_URL
     print order
-    # requests.post(LISTNER_URL, json=prepare_json_check(order))
+    requests.post(LISTNER_URL, json=prepare_json_check(order))
     print "Request sended."
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
