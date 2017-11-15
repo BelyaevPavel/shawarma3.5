@@ -7,9 +7,9 @@
     <input hidden id="urls" data-take-url="{% url 'take' %}" data-grill-url="{% url 'to_grill' %}"
            data-finish-url="{% url 'finish_cooking' %}" data-grill-timer-url="{% url 'grill_timer' %}"
            data-next-url="{% url 'next_to_prepare' %}">
-<div> {{ free_order.daily_number }} </div>
+<div class="cook-daily-number"> № {{ free_order.daily_number }} </div>
     {% for content_item in order_content %}
-        <div>
+        <div class="cook-item-container">
             <div class="cook-order-item
             {% if content_item.finish_timestamp is not None %}
                 in-grill-slot
@@ -31,6 +31,8 @@
             </div>
         </div>
     {% empty %}
-        No items.
+        <div class="cook-empty">
+            Нет заказов.
+        </div>
     {% endfor %}
 {% endblock %}

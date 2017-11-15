@@ -65,7 +65,7 @@ function AdjustLineHeight() {
 
 function TakeItem(id) {
     var url = $('#urls').attr('data-take-url');
-    var confirmation = confirm("Начать готовить?");
+    var confirmation = true;
     console.log(confirmation);
     if (confirmation) {
         $.ajaxSetup({
@@ -105,7 +105,7 @@ function TakeItem(id) {
 
 function ItemToGrill(id) {
     var url = $('#urls').attr('data-grill-url');
-    var confirmation = confirm("Поместить в гриль?");
+    var confirmation = true;
     if (confirmation) {
         $.ajaxSetup({
             beforeSend: function (xhr, settings) {
@@ -131,7 +131,7 @@ function ItemToGrill(id) {
 
 function FinishItemCooking(id) {
     var url = $('#urls').attr('data-finish-url');
-    var confirmation = confirm("Извлечь из гриля?");
+    var confirmation = true;
     if (confirmation) {
         $.ajaxSetup({
             beforeSend: function (xhr, settings) {
