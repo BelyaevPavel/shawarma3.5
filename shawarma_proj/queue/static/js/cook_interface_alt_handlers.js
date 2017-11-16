@@ -147,7 +147,7 @@ function FinishItemCooking(id) {
             dataType: 'json',
             success: function (data) {
                     $('#product_id_'+id.toString()).addClass('in-grill-slot');
-                alert('Положите в заказ №' + data['order_number']);
+                //alert('Положите в заказ №' + data['order_number']);
             },
             complete: function () {
                 location.reload();

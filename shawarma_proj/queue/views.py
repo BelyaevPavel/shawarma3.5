@@ -191,7 +191,7 @@ def cook_interface(request):
         if taken_orders[0]:
             taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
                                                               menu_item__can_be_prepared_by__title__iexact='Cook',
-                                                              finish_timestamp__isnull=True)
+                                                              finish_timestamp__isnull=True).order_by('id')
             if len(taken_order_content) > 0:
                 has_order = True
         # print "Orders: {}".format(taken_orders)
@@ -204,7 +204,7 @@ def cook_interface(request):
 
             for free_order in free_orders:
                 taken_order_content = OrderContent.objects.filter(order=free_order,
-                                                                  menu_item__can_be_prepared_by__title__iexact='Cook')
+                                                                  menu_item__can_be_prepared_by__title__iexact='Cook').order_by('id')
                 # ALERT! Only SuperGuy can handle this amount of shawarma!!!
                 if len(taken_order_content) > 6:
                     if staff.super_guy:
@@ -226,7 +226,7 @@ def cook_interface(request):
                 break
         else:
             taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
-                                                              menu_item__can_be_prepared_by__title__iexact='Cook')
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook').order_by('id')
             context = {
                 'free_order': taken_orders[0][0],
                 'order_content': taken_order_content,
@@ -657,7 +657,9 @@ def finish_cooking(request):
                 flag = False
         if flag:
             product.order.content_completed = True
-            product.order.supplement_completed = True
+            print "saving"
+            product.order.save()
+            print product.order.content_completed
         data = {
             'success': True,
             'product_id': product_id,
