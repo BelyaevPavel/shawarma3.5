@@ -6,33 +6,35 @@
 {% block content %}
     <input hidden id="urls" data-take-url="{% url 'take' %}" data-grill-url="{% url 'to_grill' %}"
            data-finish-url="{% url 'finish_cooking' %}" data-grill-timer-url="{% url 'grill_timer' %}"
-           data-next-url="{% url 'next_to_prepare' %}">
-<div class="cook-daily-number"> № {{ free_order.daily_number }} </div>
-    {% for content_item in order_content %}
-        <div class="cook-item-container">
-            <div class="cook-order-item
-            {% if content_item.finish_timestamp is not None %}
-                in-grill-slot
-            {% else %}
-                {% if content_item.start_timestamp is not None %}
-                    in-progress-item
-                {% endif %}
-            {% endif %}" id="product_id_{{ content_item.id }}" onclick="
-                    {% if content_item.finish_timestamp is not None %}
+           data-next-url="{% url 'next_to_prepare' %}" data-ajax="{% url 'cook_interface_ajax' %}">
+    <div id="inner-content">
+        <div class="cook-daily-number"> № {{ free_order.daily_number }} </div>
+        {% for content_item in order_content %}
+            <div class="cook-item-container">
+                <div class="cook-order-item
+                {% if content_item.finish_timestamp is not None %}
+                    in-grill-slot
+                {% else %}
+                    {% if content_item.start_timestamp is not None %}
+                        in-progress-item
+                    {% endif %}
+                {% endif %}" id="product_id_{{ content_item.id }}" onclick="
+                        {% if content_item.finish_timestamp is not None %}
 
-                    {% else %}
-                        {% if content_item.start_timestamp is not None %}
-                            FinishItemCooking({{ content_item.id }})
                         {% else %}
-                            TakeItem({{ content_item.id }})
-                        {% endif %}
-                    {% endif %}">
-                {{ content_item.menu_item.title }} {{ content_item.finish_timestamp }}
+                            {% if content_item.start_timestamp is not None %}
+                                FinishItemCooking({{ content_item.id }})
+                            {% else %}
+                                TakeItem({{ content_item.id }})
+                            {% endif %}
+                        {% endif %}">
+                    {{ content_item.menu_item.title }} {{ content_item.finish_timestamp }}
+                </div>
             </div>
-        </div>
-    {% empty %}
-        <div class="cook-empty">
-            Нет заказов.
-        </div>
-    {% endfor %}
+        {% empty %}
+            <div class="cook-empty">
+                Нет заказов.
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}

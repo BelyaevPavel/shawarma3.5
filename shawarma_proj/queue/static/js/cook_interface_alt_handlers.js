@@ -9,7 +9,7 @@ $(document).ready(function () {
     $('#cook_interface').addClass('active');
     AdjustLineHeight();
     //GrillRefresher();
-    //NextRefresher();
+    NextRefresher();
 });
 $(window).resize(AdjustLineHeight);
 
@@ -39,7 +39,8 @@ function GrillRefresher() {
 }
 
 function NextRefresher() {
-    var url = $('#urls').attr('data-next-url');
+    console.log("NextRefresher");
+    var url = $('#urls').attr('data-ajax');
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
             xhr.setRequestHeader("X-CSRFToken", csrftoken)
@@ -49,13 +50,18 @@ function NextRefresher() {
         type: 'POST',
         url: url,
         dataType: 'json',
+        data: {'id': '0'},
         success: function (data) {
-            $('div.next-to-prepare-container').html(data['html']);
+            console.log("success");
+            console.log(data['html']);
+            $('div#inner-content').html(JSON.parse(data['html']));
         },
         complete: function () {
             setTimeout(NextRefresher, 10000);
         }
-    });
+    }).fail(function () {
+            alert('У вас нет прав!');
+        });
 }
 
 
@@ -77,7 +83,7 @@ function TakeItem(id) {
             type: 'POST',
             url: url,
             data: {
-                'id': JSON.stringify(id)
+                'id': id
             },
             dataType: 'json',
             success: function (data) {

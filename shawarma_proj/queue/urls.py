@@ -22,6 +22,7 @@ urlpatterns = [
     url(r'^current_queue', views.current_queue, name="current_queue"),
     url(r'^production_queue', views.production_queue, name="production_queue"),
     url(r'^cook_interface', views.cook_interface, name="cook_interface"),
+    url(r'^c_i_a', views.c_i_a, name="cook_interface_ajax"),
     url(r'^redirection', views.redirection, name="redirection"),
     url(r'^buyer_queue', views.buyer_queue, name="buyer_queue"),
     url(r'^statistics', views.statistic_page, name="statistics")
