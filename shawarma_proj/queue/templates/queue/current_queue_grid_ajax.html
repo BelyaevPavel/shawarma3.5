@@ -10,6 +10,11 @@
     {% endfor %}
 </div>
 <div class="ready-orders">
+    <div>
+        <button onclick="VoiceAll()">
+            Озвучить всё
+        </button>
+    </div>
     {% for open_order in ready_orders %}
         {% include 'queue/open_order_block.html' with open_order=open_order %}
     {% empty %}

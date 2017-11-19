@@ -83,3 +83,11 @@ function CancelOrder(order_id) {
         event.preventDefault();
     }
 }
+
+function VoiceAll() {
+    $.get($('#urls').attr('voice-all-url'));
+}
+
+function VoiceOrder(id) {
+    $.get($('#urls').attr('voice-all-url'));
+}

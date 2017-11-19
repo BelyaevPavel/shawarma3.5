@@ -69,7 +69,8 @@ def buyer_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        supplement_completed=False, is_canceled=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by(
+                                        content_completed=True, supplement_completed=True, is_canceled=False,
+                                        is_voiced=False).order_by(
         'open_time')
     context = {
         'open_orders': open_orders,
@@ -456,6 +457,35 @@ def print_order(request, order_id):
     os.system(scmd)
 
     return HttpResponse(template.render(context, request))
+
+
+def voice_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    order.is_voiced = False
+    order.save()
+
+    return HttpResponse()
+
+
+def unvoice_order(request):
+    order_id = request.POST.get('id', None)
+    if order_id:
+        order = get_object_or_404(Order, id=order_id)
+        order.is_voiced = True
+        order.save()
+
+    return HttpResponse()
+
+
+def voice_all(request):
+    today_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                        is_ready=True)
+    for order in today_orders:
+        order.is_voiced = False
+        order.save()
+
+    return HttpResponse()
+
 
 
 @login_required()
