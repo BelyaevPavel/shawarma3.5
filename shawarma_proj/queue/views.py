@@ -88,10 +88,10 @@ def current_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        is_canceled=False, supplement_completed=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        is_canceled=False, content_completed=True, supplement_completed=True).order_by(
-        'open_time')
-    print open_orders
-    print ready_orders
+                                        is_canceled=False, content_completed=True, supplement_completed=True,
+                                        is_ready=True).order_by('open_time')
+    # print open_orders
+    # print ready_orders
 
     template = loader.get_template('queue/current_queue_grid.html')
     context = {
@@ -118,7 +118,7 @@ def current_queue(request):
         'ready_length': len(ready_orders),
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
     }
-    print context
+    # print context
     return HttpResponse(template.render(context, request))
 
 
@@ -204,7 +204,8 @@ def cook_interface(request):
 
             for free_order in free_orders:
                 taken_order_content = OrderContent.objects.filter(order=free_order,
-                                                                  menu_item__can_be_prepared_by__title__iexact='Cook').order_by('id')
+                                                                  menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                    'id')
                 # ALERT! Only SuperGuy can handle this amount of shawarma!!!
                 if len(taken_order_content) > 6:
                     if staff.super_guy:
@@ -219,17 +220,20 @@ def cook_interface(request):
                     # print "Free orders prepared_by: {}".format(free_order.prepared_by)
                     context = {
                         'free_order': free_order,
-                        'order_content': taken_order_content,
+                        'order_content': [{'number': number,
+                                           'item': item} for number, item in enumerate(taken_order_content, start=1)],
                         'staff_category': staff
                     }
 
                 break
         else:
-            taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
-                                                              menu_item__can_be_prepared_by__title__iexact='Cook').order_by('id')
+            taken_order_content = \
+                OrderContent.objects.filter(order=taken_orders[0][0],
+                                            menu_item__can_be_prepared_by__title__iexact='Cook').order_by('id')
             context = {
                 'free_order': taken_orders[0][0],
-                'order_content': taken_order_content,
+                'order_content': [{'number': number,
+                                   'item': item} for number, item in enumerate(taken_order_content, start=1)],
                 'staff_category': staff
             }
 
@@ -335,6 +339,7 @@ def cook_interface(request):
 def c_i_a(request):
     user = request.user
     staff = Staff.objects.get(user=user)
+    print u"AJAX from {}".format(user)
     context = None
     taken_order_content = None
     taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
@@ -358,7 +363,8 @@ def c_i_a(request):
 
         for free_order in free_orders:
             taken_order_content = OrderContent.objects.filter(order=free_order,
-                                                              menu_item__can_be_prepared_by__title__iexact='Cook').order_by('id')
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                'id')
             # ALERT! Only SuperGuy can handle this amount of shawarma!!!
             if len(taken_order_content) > 6:
                 if staff.super_guy:
@@ -373,17 +379,20 @@ def c_i_a(request):
                 # print "Free orders prepared_by: {}".format(free_order.prepared_by)
                 context = {
                     'free_order': free_order,
-                    'order_content': taken_order_content,
+                    'order_content': [{'number': number,
+                                       'item': item} for number, item in enumerate(taken_order_content, start=1)],
                     'staff_category': staff
                 }
 
             break
     else:
         taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
-                                                          menu_item__can_be_prepared_by__title__iexact='Cook').order_by('id')
+                                                          menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+            'id')
         context = {
             'free_order': taken_orders[0][0],
-            'order_content': taken_order_content,
+            'order_content': [{'number': number,
+                               'item': item} for number, item in enumerate(taken_order_content, start=1)],
             'staff_category': staff
         }
 
@@ -516,7 +525,7 @@ def make_order(request):
     # if order.is_paid:
     print "Sending request to " + LISTNER_URL
     print order
-    # requests.post(LISTNER_URL, json=prepare_json_check(order))
+    requests.post(LISTNER_URL, json=prepare_json_check(order))
     print "Request sended."
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
@@ -640,8 +649,12 @@ def next_to_prepare(request):
 @login_required()
 @permission_required('queue.can_cook')
 def take(request):
-    print 'Trying to take 1.'
+    # print 'Trying to take 1.'
     product_id = request.POST.get('id', None)
+    # print request.POST
+    data = {
+        'success': json.dumps(False)
+    }
     if product_id:
         product = OrderContent.objects.get(id=product_id)
         if product.staff_maker is None:
@@ -657,7 +670,7 @@ def take(request):
                 'success': json.dumps(False),
                 'staff_maker': 'TEST_MAKER'
             }
-    print 'Trying to take 2.'
+    # print 'Trying to take 2.'
 
     return JsonResponse(data)
 
@@ -741,6 +754,32 @@ def finish_cooking(request):
 
 @login_required()
 @permission_required('queue.can_cook')
+def finish_all_content(request):
+    order_id = request.POST.get('id', None)
+    if order_id:
+        order = Order.objects.get(id=order_id)
+        products = OrderContent.objects.filter(order=order)
+        for product in products:
+            product.start_timestamp = datetime.datetime.now()
+            product.finish_timestamp = datetime.datetime.now()
+            product.staff_maker = Staff.objects.get(user=request.user)
+            product.save()
+        order.content_completed = True
+        # print "saving"
+        order.save()
+        data = {
+            'success': True
+        }
+    else:
+        data = {
+            'success': False
+        }
+
+    return JsonResponse(data)
+
+
+@login_required()
+@permission_required('queue.can_cook')
 def finish_supplement(request):
     product_id = request.POST.get('id', None)
     if product_id:
@@ -755,8 +794,9 @@ def finish_supplement(request):
             if item.finish_timestamp is None:
                 flag = False
         if flag:
-            product.order.content_completed = True
             product.order.supplement_completed = True
+            product.order.save()
+
         data = {
             'success': True,
             'product_id': product_id,
@@ -778,6 +818,8 @@ def ready_order(request):
     order_id = request.POST.get('id', None)
     if order_id:
         order = Order.objects.get(id=order_id)
+        order.supplement_completed = True
+        order.is_ready = True
         order.save()
         data = {
             'success': True

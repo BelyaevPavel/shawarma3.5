@@ -49,8 +49,10 @@ function CloseOrder(order_id) {
 }
 
 function PrintOrder(order_id) {
-    var url = '/queue/order/print/'+order_id+'/';
-    window.open(url, 'Печать заказа ' + order_id);
+    var confirmation = confirm("Печатать заказ?");
+    if (confirmation == true) {
+        $.get('/queue/order/print/' + order_id + '/');
+    }
 }
 
 function CancelOrder(order_id) {

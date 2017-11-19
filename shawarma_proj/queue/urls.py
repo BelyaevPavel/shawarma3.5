@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^ajax/to_grill', views.to_grill, name="to_grill"),
     url(r'^ajax/grill_timer', views.grill_timer, name="grill_timer"),
     url(r'^ajax/finish_cooking', views.finish_cooking, name="finish_cooking"),
+    url(r'^ajax/finish_all_content', views.finish_all_content, name="finish_all_content"),
     url(r'^ajax/finish_supplement', views.finish_supplement, name="finish_supplement"),
     url(r'^ajax/current_queue', views.current_queue_ajax, name="current_queue_ajax"),
     url(r'^current_queue', views.current_queue, name="current_queue"),
