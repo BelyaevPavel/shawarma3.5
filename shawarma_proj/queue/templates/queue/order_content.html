@@ -54,6 +54,18 @@
     {% else %}
             Нет товаров.
     {% endif %}
+    <p>
+        <input type="radio" id="servery_auto" name="servery_choose" value="auto">
+        <label for="servery_auto">Автоназначение</label>
+    </p>
+    {% for servery in serveries %}
+        <p>
+            <input type="radio" id="servery_{{ servery.id }}" name="servery_choose" value="{{ servery.id }}">
+            <label for="servery_{{ servery.id }}">{{ servery.title }}</label>
+        </p>
+    {% empty %}
+        Места выдачи внесены.
+    {% endfor %}
     <button onclick="ReadyOrder({{ order_info.id }})" {% if not ready %}disabled{% endif %}>Заказ готов</button>
     <button onclick="PrintOrder({{ order_info.id }})">Печать</button>
 {% endblock %}

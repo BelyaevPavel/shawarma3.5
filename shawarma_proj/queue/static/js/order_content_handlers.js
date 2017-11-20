@@ -15,7 +15,8 @@ function ReadyOrder(id) {
             type: 'POST',
             url: url,
             data: {
-                'id': id
+                'id': id,
+                'servery_choose': $('[name=servery_choose]:checked').val()
             },
             dataType: 'json',
             success: function (data) {

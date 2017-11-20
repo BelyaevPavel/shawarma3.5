@@ -57,6 +57,17 @@ class Menu(models.Model):
         return u"{}".format(self.title)
 
 
+class Servery(models.Model):
+    title = models.CharField(max_length=500, default="")
+    ip_address = models.CharField(max_length=500, default="")
+
+    def __str__(self):
+        return u"{}".format(self.title)
+
+    def __unicode__(self):
+        return u"{}".format(self.title)
+
+
 class Order(models.Model):
     daily_number = models.IntegerField(verbose_name="Daily Number", unique_for_date=True)
     open_time = models.DateTimeField(verbose_name="Open Time")
@@ -75,6 +86,7 @@ class Order(models.Model):
     is_voiced = models.BooleanField(default=False, verbose_name="Is Voiced")
     # True - if paid with cash, False - if paid with card.
     paid_with_cash = models.BooleanField(default=True, verbose_name="Paid With Cash")
+    servery = models.ForeignKey(Servery, verbose_name="Servery")
 
     class Meta:
         permissions = (

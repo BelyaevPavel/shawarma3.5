@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent
+from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent, Servery
 from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -434,7 +434,8 @@ def order_content(request, order_id):
         'maker': order_info.prepared_by,
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'order_content': current_order_content,
-        'ready': order_info.content_completed and order_info.supplement_completed
+        'ready': order_info.content_completed and order_info.supplement_completed,
+        'serveries': Servery.objects.all()
     }
     return HttpResponse(template.render(context, request))
 
@@ -487,14 +488,15 @@ def voice_all(request):
     return HttpResponse()
 
 
-
 @login_required()
 @permission_required('queue.add_order')
 def make_order(request):
+    servery_ip = request.META.get('REMOTE_ADDR', '') or request.META.get('HTTP_X_FORWARDED_FOR', '')
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
     cook_choose = request.POST['cook_choose']
+    servery = Servery.objects.get(ip_address=servery_ip)
     order_next_number = 0
     order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
         Max('daily_number'))
@@ -533,6 +535,7 @@ def make_order(request):
     else:
         order.prepared_by = Staff.objects.get(id=int(cook_choose))
     content_to_send = []
+    order.servery = servery
     order.save()
 
     total = 0
@@ -846,10 +849,16 @@ def finish_supplement(request):
 @permission_required('queue.change_order')
 def ready_order(request):
     order_id = request.POST.get('id', None)
+    servery_choose = request.POST.get('servery_choose', None)
     if order_id:
         order = Order.objects.get(id=order_id)
         order.supplement_completed = True
         order.is_ready = True
+        check_auto = servery_choose == 'auto' or servery_choose is None
+        if not check_auto:
+            servery = Servery.objects.get(id=servery_choose)
+            order.servery = servery
+
         order.save()
         data = {
             'success': True
