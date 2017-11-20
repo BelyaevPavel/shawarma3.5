@@ -44,6 +44,7 @@ $(function () {
                             DrawOrderTable();
                             CalculateTotal();
                             $('#cook_auto').prop('checked', true);
+                            location.reload();
                         }
                     }
                 ).fail(function () {

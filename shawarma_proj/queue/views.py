@@ -539,11 +539,14 @@ def make_order(request):
     order.save()
 
     total = 0
+    content_presense = False
     for item in content:
         for i in range(0, int(item['quantity'])):
             new_order_content = OrderContent(order=order, menu_item_id=item['id'], note=item['note'])
             new_order_content.save()
             menu_item = Menu.objects.get(id=item['id'])
+            if menu_item.can_be_prepared_by.title == 'Cook':
+                content_presense = True
             total += menu_item.price
 
         content_to_send.append(
@@ -554,6 +557,7 @@ def make_order(request):
         )
 
     order.total = total
+    order.content_completed = not content_presense
     order.save()
     # if order.is_paid:
     print "Sending request to " + LISTNER_URL
