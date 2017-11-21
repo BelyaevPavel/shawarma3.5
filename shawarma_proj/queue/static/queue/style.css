@@ -526,3 +526,20 @@ div.cook-daily-number {
     font-size: xx-large;
     text-align: center;
 }
+
+span.cook-item-comment {
+    font-style: italic;
+    color: blue;
+    float: right;
+}
+
+div.cook-complite-all-button {
+    line-height: 80px;
+    height: 80px;
+    text-align: center;
+    background-color: blueviolet;
+    border-bottom: solid 1px #D8D8D8;
+    border-top: solid 1px #D8D8D8;
+    font-size: xx-large;
+    cursor: pointer;
+}

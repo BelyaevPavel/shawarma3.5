@@ -29,7 +29,7 @@
                                 TakeItem({{ content_item.item.id }})
                             {% endif %}
                         {% endif %}">
-                    №{{ content_item.number }} {{ content_item.item.menu_item.title }} {{ content_item.item.note }}
+                    №{{ content_item.number }} {{ content_item.item.menu_item.title }} <span class="cook-item-comment">{{ content_item.item.note }}</span>
                 </div>
             </div>
         {% empty %}
@@ -38,7 +38,7 @@
             </div>
         {% endfor %}
         {% if order_content %}
-            <div class="cook-item-container" onclick="FinishAllContent({{ free_order.id }})">
+            <div class="cook-complite-all-button" onclick="FinishAllContent({{ free_order.id }})">
                 Завершить всё
             </div>
          {% endif %}
