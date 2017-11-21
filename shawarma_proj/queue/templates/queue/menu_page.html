@@ -38,16 +38,13 @@
                     <input type="checkbox" id="paid_with_cash" checked value="Оплачен наличными" name="Оплачено наличными"> Наличные
                 </p>
                 <p>
-                    <label>
-                        <input type="radio" id="cook_auto" name="cook_choose" value="auto" checked> Автоназначение
-                    </label>
+                    <input type="radio" id="cook_auto" name="cook_choose" value="auto" checked>
+                    <label for="cook_auto">Автоназначение</label>
                 </p>
                 {% for available_cooker in available_cookers %}
                     <p>
-                        <label>
-                            <input type="radio" id="cook_{{ available_cooker.id }}" name="cook_choose" value="{{ available_cooker.id }}">
-                            {{ available_cooker.user.first_name }} {{ available_cooker.user.last_name }}
-                        </label>
+                        <input type="radio" id="cook_{{ available_cooker.id }}" name="cook_choose" value="{{ available_cooker.id }}">
+                        <label for="cook_{{ available_cooker.id }}">{{ available_cooker.user.first_name }} {{ available_cooker.user.last_name }}</label>
                     </p>
                 {% endfor %}
 

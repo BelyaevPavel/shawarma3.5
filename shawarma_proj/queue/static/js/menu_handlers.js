@@ -43,6 +43,7 @@ $(function () {
                             currOrder = [];
                             DrawOrderTable();
                             CalculateTotal();
+                            $('#cook_auto').prop('checked', true);
                         }
                     }
                 ).fail(function () {

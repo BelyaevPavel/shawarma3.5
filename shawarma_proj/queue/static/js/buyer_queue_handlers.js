@@ -18,7 +18,28 @@ function refresher() {
                 return !ready_order_numbers.includes(el)
             });
             console.log(difference);
-            sound_number(difference);
+            //sound_number(difference);
+            for(var i=0; i<updated_ready_numbers.length; i++)
+            {
+                sound_number(updated_ready_numbers[i]);
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken)
+                    }
+                });
+                $.ajax({
+                        type: 'POST',
+                        url: $('#urls').attr('data-cancel-order-url'),
+                        data: {"id": order_id},
+                        dataType: 'json',
+                        success: function (data) {
+                            alert('Заказ отменён!');
+                        }
+                    }
+                ).fail(function () {
+                    // alert('У вас нет прав!');
+                });
+            }
         },
         complete: function () {
             setTimeout(refresher, 10000);
