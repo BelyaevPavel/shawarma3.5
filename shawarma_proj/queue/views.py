@@ -470,12 +470,12 @@ def voice_order(request, order_id):
 
 
 def unvoice_order(request):
-    order_id = request.POST.get('id', None)
+    daily_number = request.POST.get('daily_number', None)
     data = {
         'success': False
     }
-    if order_id:
-        order = get_object_or_404(Order, id=order_id)
+    if daily_number:
+        order = get_object_or_404(Order, daily_number=daily_number, open_time__contains=datetime.date.today())
         order.is_voiced = True
         order.save()
         data = {
