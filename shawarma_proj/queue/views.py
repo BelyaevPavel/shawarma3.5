@@ -573,7 +573,7 @@ def make_order(request):
     # if order.is_paid:
     print "Sending request to " + order.servery.ip_address
     print order
-    requests.post('http://' + order.servery.ip_address, json=prepare_json_check(order))
+    requests.post('http://'+order.servery.ip_address+':'+LISTNER_PORT, json=prepare_json_check(order))
     print "Request sended."
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
