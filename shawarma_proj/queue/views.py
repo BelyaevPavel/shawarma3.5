@@ -69,8 +69,7 @@ def buyer_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        supplement_completed=False, is_canceled=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True, is_canceled=False,
-                                        is_voiced=False).order_by(
+                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by(
         'open_time')
     context = {
         'open_orders': open_orders,
@@ -80,7 +79,7 @@ def buyer_queue_ajax(request):
     data = {
         'html': template.render(context, request),
         'ready': json.dumps([order.daily_number for order in ready_orders]),
-	'voiced': json.dumps([order.is_voiced for order in ready_orders])
+        'voiced': json.dumps([order.is_voiced for order in ready_orders])
     }
     return JsonResponse(data)
 
@@ -129,8 +128,8 @@ def current_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        is_canceled=False, supplement_completed=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        is_canceled=False, content_completed=True, supplement_completed=True).order_by(
-        'open_time')
+                                        is_canceled=False, content_completed=True, supplement_completed=True,
+                                        is_ready=True).order_by('open_time')
 
     template = loader.get_template('queue/current_queue_grid_ajax.html')
     context = {
@@ -547,14 +546,17 @@ def make_order(request):
     order.save()
 
     total = 0
-    content_presense = False
+    content_presence = False
+    supplement_presence = False
     for item in content:
         for i in range(0, int(item['quantity'])):
             new_order_content = OrderContent(order=order, menu_item_id=item['id'], note=item['note'])
             new_order_content.save()
             menu_item = Menu.objects.get(id=item['id'])
             if menu_item.can_be_prepared_by.title == 'Cook':
-                content_presense = True
+                content_presence = True
+            if menu_item.can_be_prepared_by.title == 'Operator':
+                supplement_presence = True
             total += menu_item.price
 
         content_to_send.append(
@@ -565,12 +567,13 @@ def make_order(request):
         )
 
     order.total = total
-    order.content_completed = not content_presense
+    order.content_completed = not content_presence
+    order.supplement_completed = not supplement_presence
     order.save()
     # if order.is_paid:
     print "Sending request to " + order.servery.ip_address
     print order
-    requests.post('http://'+order.servery.ip_address, json=prepare_json_check(order))
+    requests.post('http://' + order.servery.ip_address, json=prepare_json_check(order))
     print "Request sended."
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
