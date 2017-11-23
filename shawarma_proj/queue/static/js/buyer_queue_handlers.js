@@ -84,36 +84,78 @@ function process_numbers(updated_ready_numbers, voiced_flags) {
 }
 
 function sound_number(value) {
-    var decimals = False;
-    var hundreds = False;
+    var str_value = value.toString();
+    var aux_str_100 = '';
+    var aux_str_10 = '';
+    var aux_str = '#speaker-' + value;
     if (value > 20 && value % 10 != 0)
     {
-        decimals = True;
-        if (value > 100)
-            hundreds = True;
+        if (str_value.length==3){
+            aux_str_100 = '#speaker-' + parseInt(str_value[0])*100;
+            aux_str_10 = '#speaker-' + parseInt(str_value[1])*10;
+            aux_str = '#speaker-' + str_value[2];
+            console.log(aux_str_100);
+            console.log(aux_str_10);
+            console.log(aux_str);
+            console.log('Playing...');
+            setTimeout(function () {
+                $('#speaker-order')[0].play();
+            }, 0);
+            $('#speaker-order')[0].load();
+            setTimeout(function () {
+                $('#speaker-number')[0].play();
+            }, 750);
+            $('#speaker-number')[0].load();
+            setTimeout(function () {
+                $(aux_str_100)[0].play();
+            }, 1500);
+            setTimeout(function () {
+                $(aux_str_10)[0].play();
+            }, 2250);
+            setTimeout(function () {
+                $(aux_str)[0].play();
+            }, 3000);
+            $(aux_str)[0].load();
+        }
+        else {
+            aux_str_10 = '#speaker-' + parseInt(str_value[0])*10;
+            aux_str = '#speaker-' + str_value[1];
+            console.log(aux_str_10);
+            console.log(aux_str);
+            console.log('Playing...');
+            setTimeout(function () {
+                $('#speaker-order')[0].play();
+            }, 0);
+            $('#speaker-order')[0].load();
+            setTimeout(function () {
+                $('#speaker-number')[0].play();
+            }, 750);
+            $('#speaker-number')[0].load();
+            setTimeout(function () {
+                $(aux_str_10)[0].play();
+            }, 1500);
+            setTimeout(function () {
+                $(aux_str)[0].play();
+            }, 2250);
+            $(aux_str)[0].load();
+        }
+
     }
-    aux_str = '#speaker-' + value;
-    aux_str_100 = '';
-    aux_str_10 = '';
-    if (hundreds){
-        aux_str_100 = '#speaker-' + Math.floor(value/100)*100;
+    else {
+        console.log(aux_str);
+        console.log('Playing...');
+        setTimeout(function () {
+            $('#speaker-order')[0].play();
+        }, 0);
+        $('#speaker-order')[0].load();
+        setTimeout(function () {
+            $('#speaker-number')[0].play();
+        }, 750);
+        $('#speaker-number')[0].load();
+        setTimeout(function () {
+            $(aux_str)[0].play();
+        }, 1500);
+        $(aux_str)[0].load();
     }
-    if (decimals){
-        aux_str_10 = '#speaker-' + (value - Math.floor(value/100)*100);
-    }
-    console.log(aux_str);
-    console.log('Playing...');
-    setTimeout(function () {
-        $('#speaker-order')[0].play();
-    }, 0);
-    $('#speaker-order')[0].load();
-    setTimeout(function () {
-        $('#speaker-number')[0].play();
-    }, 750);
-    $('#speaker-number')[0].load();
-    setTimeout(function () {
-        $(aux_str)[0].play();
-    }, 1500);
-    $(aux_str)[0].load();
     //ready_order_numbers = ready_order_numbers.push(value);
 }
