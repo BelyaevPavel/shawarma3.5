@@ -806,7 +806,7 @@ def finish_all_content(request):
     order_id = request.POST.get('id', None)
     if order_id:
         order = Order.objects.get(id=order_id)
-        products = OrderContent.objects.filter(order=order)
+        products = OrderContent.objects.filter(order=order, menu_item__can_be_prepared_by__title__iexact='Cook')
         for product in products:
             product.start_timestamp = datetime.datetime.now()
             product.finish_timestamp = datetime.datetime.now()
