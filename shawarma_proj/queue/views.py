@@ -72,8 +72,8 @@ def buyer_queue(request):
                                         content_completed=True, supplement_completed=True, is_ready=True,
                                         is_canceled=False).order_by('open_time')
     context = {
-        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in open_orders],
-        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in ready_orders]
+        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in open_orders],
+        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in ready_orders]
     }
     template = loader.get_template('queue/buyer_queue.html')
     return HttpResponse(template.render(context, request))
@@ -86,8 +86,8 @@ def buyer_queue_ajax(request):
                                         content_completed=True, supplement_completed=True, is_ready=True,
                                         is_canceled=False).order_by('open_time')
     context = {
-        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in open_orders],
-        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in ready_orders]
+        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in open_orders],
+        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in ready_orders]
     }
     template = loader.get_template('queue/buyer_queue_ajax.html')
     data = {
