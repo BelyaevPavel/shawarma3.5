@@ -5,7 +5,8 @@
 {% endblock %}
 {% block content %}
     <input hidden id="urls" data-cancel-item-url="{% url 'cancel_item' %}" data-ready-url="{% url 'ready_order' %}"
-           data-cancel-order-url="{% url 'cancel_order' %}" data-finish-item-url="{%  url 'finish_supplement' %}">
+           data-cancel-order-url="{% url 'cancel_order' %}" data-finish-item-url="{%  url 'finish_supplement' %}"
+           data-pay-url="{% url 'pay_order' %}">
     <table class="currentOrderTable">
         <thead>
         {% if order_info %}
@@ -40,7 +41,7 @@
                     {{ order_item.staff_maker }}
                 </div>
                 <div class="order-item-actions">
-                    {% if order_item.menu_item.can_be_prepared_by.title == 'Operator' %}
+                    {% if order_item.menu_item.can_be_prepared_by.title == 'Operator' or order_item.menu_item.can_be_prepared_by.title == staff_category.title %}
                         <button onclick="FinishCooking({{ order_item.id }})">
                             Закончить
                         </button>
@@ -67,5 +68,6 @@
         Места выдачи внесены.
     {% endfor %}
     <button onclick="ReadyOrder({{ order_info.id }})" {% if not ready %}disabled{% endif %}>Заказ готов</button>
+    <button onclick="PayOrder({{ order_info.id }})" {% if not order_info.is_paid %}disabled{% endif %}>Оплатить</button>
     <button onclick="PrintOrder({{ order_info.id }})">Печать</button>
 {% endblock %}

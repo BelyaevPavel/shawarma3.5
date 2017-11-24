@@ -444,10 +444,8 @@ def print_order(request, order_id):
     order_info = get_object_or_404(Order, id=order_id)
     order_info.printed = True
     order_info.save()
-    order_content = OrderContent.objects.filter(order_id=order_id).values('menu_item__title',
-                                                                          'menu_item__price',
-                                                                          ).annotate(
-        count=Count('menu_item__title'))
+    order_content = OrderContent.objects.filter(order_id=order_id).values('menu_item__title', 'menu_item__price',
+                                                                          ).annotate(count=Count('menu_item__title'))
     template = loader.get_template('queue/print_order_wh.html')
     context = {
         'order_info': order_info,
@@ -575,7 +573,7 @@ def make_order(request):
         print "Sending request to " + order.servery.ip_address
         print order
         requests.post('http://'+order.servery.ip_address+':'+LISTNER_PORT, json=prepare_json_check(order))
-        print "Request sended."
+        print "Request sent."
 
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
@@ -877,6 +875,29 @@ def ready_order(request):
             order.servery = servery
 
         order.save()
+        data = {
+            'success': True
+        }
+    else:
+        data = {
+            'success': False
+        }
+
+    return JsonResponse(data)
+
+
+@login_required()
+@permission_required('queue.change_order')
+def pay_order(request):
+    order_id = request.POST.get('id', None)
+    if order_id:
+        order = Order.objects.get(id=order_id)
+        order.is_paid = True
+        order.save()
+        print "Sending request to " + order.servery.ip_address
+        # print order
+        requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
+        print "Request sent."
         data = {
             'success': True
         }
