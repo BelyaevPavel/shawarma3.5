@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
+from django.http.response import HttpResponseRedirect
+
 from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent, Servery
 from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth import logout, login, views as auth_views
 from django.db.models import Max, Count, Avg, F
 from hashlib import md5
 from shawarma.settings import TIME_ZONE, LISTNER_URL, LISTNER_PORT, PRINTER_URL
@@ -24,6 +28,16 @@ def redirection(request):
         return HttpResponseRedirect('menu')
     if staff_category.title == 'Operator':
         return HttpResponseRedirect('current_queue')
+
+
+def logout_view(request):
+    user = request.user
+    staff = Staff.objects.get(user=user)
+    if not staff.available:
+        staff.available = False
+        staff.save()
+    logout(request)
+    return redirect('welcomer')
 
 
 # Create your views here.
@@ -182,6 +196,9 @@ def cook_interface(request):
     def new_processor(request):
         user = request.user
         staff = Staff.objects.get(user=user)
+        if not staff.available:
+            staff.available = True
+            staff.save()
         context = None
         taken_order_content = None
         taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
@@ -340,6 +357,9 @@ def cook_interface(request):
 def c_i_a(request):
     user = request.user
     staff = Staff.objects.get(user=user)
+    if not staff.available:
+        staff.available = True
+        staff.save()
     # print u"AJAX from {}".format(user)
     context = None
     taken_order_content = None
@@ -517,7 +537,8 @@ def make_order(request):
                   paid_with_cash=paid_with_cash)
     super_guy = Staff.objects.filter(super_guy=True, user__last_login__contains=datetime.date.today(),
                                      staff_category__title__iexact='Cook')
-    cooks = Staff.objects.filter(user__last_login__contains=datetime.date.today(), staff_category__title__iexact='Cook')
+    # cooks = Staff.objects.filter(user__last_login__contains=datetime.date.today(), staff_category__title__iexact='Cook')
+    cooks = Staff.objects.filter(available=True, staff_category__title__iexact='Cook')
 
     data = {
         "daily_number": order.daily_number
@@ -527,7 +548,8 @@ def make_order(request):
         min_count = 100
         for cook_index in range(0, len(cooks)):
             cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks[cook_index],
-                                                              order__open_time__contains=datetime.date.today())
+                                                              order__open_time__contains=datetime.date.today(),
+                                                              order__is_canceled=False, order__close_time__isnull=True)
             if min_count > len(cooks_order_content):
                 min_count = len(cooks_order_content)
                 min_index = cook_index
