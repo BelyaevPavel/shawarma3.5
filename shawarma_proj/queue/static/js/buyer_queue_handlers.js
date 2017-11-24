@@ -9,18 +9,18 @@ $(document).ready(function () {
 );
 
 function refresher() {
-    console.log('Refreshed');
+    //console.log('Refreshed');
     $.ajax({
         url: $('#urls').attr('data-refresh-url'),
         success: function (data) {
             $('#page-content').html(data['html']);
             var updated_ready_numbers = JSON.parse(data['ready']);
             var voiced_flags = JSON.parse(data['voiced']);
-            var difference = updated_ready_numbers.filter(function (el) {
-                return !ready_order_numbers.includes(el)
-            });
+            // var difference = updated_ready_numbers.filter(function (el) {
+            //     return !ready_order_numbers.includes(el)
+            // });
             process_numbers(updated_ready_numbers, voiced_flags);
-            console.log(difference);
+            //console.log(difference);
             //sound_number(difference);
             /*for(var i=0; i<updated_ready_numbers.length; i++)
              {
@@ -54,6 +54,8 @@ function refresher() {
     });
 }
 
+// Test string:
+// process_numbers(['55', '161', '110', '115', '16'], [false, false, false, false, false]);
 function process_numbers(updated_ready_numbers, voiced_flags) {
     $.each(updated_ready_numbers, function (index, value) {
         setTimeout(function () {
@@ -79,7 +81,7 @@ function process_numbers(updated_ready_numbers, voiced_flags) {
                     console.log('Failed ' + aux);
                 });
             }
-        }, 3000 * index);
+        }, 3500 * index);
     });
 }
 
@@ -88,7 +90,7 @@ function sound_number(value) {
     var aux_str_100 = '';
     var aux_str_10 = '';
     var aux_str = '#speaker-' + value;
-    if (value > 20 && value % 10 != 0)
+    if ((value > 20 && value % 10 != 0)|| value>100)
     {
         if (str_value.length==3){
             aux_str_100 = '#speaker-' + parseInt(str_value[0])*100;
@@ -104,18 +106,29 @@ function sound_number(value) {
             $('#speaker-order')[0].load();
             setTimeout(function () {
                 $('#speaker-number')[0].play();
-            }, 750);
+            }, 1250);
             $('#speaker-number')[0].load();
             setTimeout(function () {
                 $(aux_str_100)[0].play();
-            }, 1250);
-            setTimeout(function () {
-                $(aux_str_10)[0].play();
-            }, 2500);
-            setTimeout(function () {
-                $(aux_str)[0].play();
-            }, 3500);
-            $(aux_str)[0].load();
+            }, 1750);
+            $(aux_str_100)[0].load();
+
+            if (parseInt(str_value[1])*10+parseInt(str_value[2])>20) {
+                setTimeout(function () {
+                    $(aux_str_10)[0].play();
+                }, 2250);
+                $(aux_str_10)[0].load();
+                setTimeout(function () {
+                    $(aux_str)[0].play();
+                }, 3250);
+                $(aux_str)[0].load();
+            }
+            else {
+                setTimeout(function () {
+                    $('#speaker-'+str_value[1]+str_value[2])[0].play();
+                }, 2500);
+                $('#speaker-'+str_value[1]+str_value[2])[0].load();
+            }
         }
         else {
             aux_str_10 = '#speaker-' + parseInt(str_value[0])*10;
@@ -129,14 +142,15 @@ function sound_number(value) {
             $('#speaker-order')[0].load();
             setTimeout(function () {
                 $('#speaker-number')[0].play();
-            }, 750);
+            }, 1250);
             $('#speaker-number')[0].load();
             setTimeout(function () {
                 $(aux_str_10)[0].play();
-            }, 1500);
+            }, 1750);
+            $(aux_str_10)[0].load();
             setTimeout(function () {
                 $(aux_str)[0].play();
-            }, 2150);
+            }, 2500);
             $(aux_str)[0].load();
         }
 
@@ -150,11 +164,11 @@ function sound_number(value) {
         $('#speaker-order')[0].load();
         setTimeout(function () {
             $('#speaker-number')[0].play();
-        }, 750);
+        }, 1250);
         $('#speaker-number')[0].load();
         setTimeout(function () {
             $(aux_str)[0].play();
-        }, 1500);
+        }, 1750);
         $(aux_str)[0].load();
     }
     //ready_order_numbers = ready_order_numbers.push(value);
