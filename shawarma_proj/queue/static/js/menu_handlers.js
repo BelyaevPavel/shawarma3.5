@@ -16,12 +16,17 @@ $(function () {
         if(currOrder.length>0) {
             var confirmation = confirm("Подтвердить заказ?");
             var form = $('.subm');
-            var is_paid = true;
+            var is_paid = false;
             if ($('#is_paid').is(':checked'))
-                is_paid = false;
-            var paid_with_cash = true;
+                is_paid = true;
+            var paid_with_cash = false;
             if ($('#paid_with_cash').is(':checked'))
-                paid_with_cash = false;
+                paid_with_cash = true;
+            if (is_paid && paid_with_cash)
+            {
+                var cash = prompt("Введите полученную сумму:", "");
+                alert("Сдача: " + (parseInt(cash)-parseInt($('p.totalDisplay').text())))
+            }
             if (confirmation == true) {
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
