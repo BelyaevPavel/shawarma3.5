@@ -15,6 +15,7 @@ function refresher() {
         success: function (data) {
             $('#page-content').html(data['html']);
             var updated_ready_numbers = JSON.parse(data['ready']);
+	    var voiced_flags = JSON.parse(data['voiced']);
             var difference = updated_ready_numbers.filter(function (el) {
                 return !ready_order_numbers.includes(el)
             });
@@ -44,8 +45,10 @@ function refresher() {
                     });
                 }, 3000);
             }*/
-            $.each(difference, function (index, value) {
+            $.each(updated_ready_numbers, function (index, value) {
                 setTimeout(function () {
+		    if(!voiced_flags[index])
+		    {
                     aux = value;
                     console.log(aux);
                     sound_number(value);
@@ -64,6 +67,7 @@ function refresher() {
                         }
                     ).fail(function () {
                     });
+		    }
                 }, 3000*index);
             })
         },
@@ -108,5 +112,5 @@ function sound_number(value) {
         $(aux_str)[0].play();
     }, 1500);
     $(aux_str)[0].load();
-    ready_order_numbers = ready_order_numbers.push(value);
+    //ready_order_numbers = ready_order_numbers.push(value);
 }

@@ -89,5 +89,5 @@ function VoiceAll() {
 }
 
 function VoiceOrder(id) {
-    $.get($('#urls').attr('voice-all-url'));
+    $.get(id);
 }

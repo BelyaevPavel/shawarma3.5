@@ -30,8 +30,7 @@ function ReadyOrder(id) {
 }
 
 function PrintOrder(order_id) {
-    var url = '/queue/order/print/'+order_id+'/';
-    window.open(url, 'Печать заказа ' + order_id)
+    $.get('/queue/order/print/'+order_id+'/');
 }
 
 function CancelItem(id) {
@@ -80,7 +79,7 @@ function FinishCooking(id) {
         },
         dataType: 'json',
         success: function (data) {
-            alert('Success!' + data);
+            //alert('Success!' + data);
         },
         complete: function () {
             location.reload();

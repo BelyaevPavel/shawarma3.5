@@ -1,4 +1,5 @@
 Заказ №: {{ order_info.daily_number }} 
+Повар: {{ order_info.prepared_by.user }}
 {{ order_info.open_time }}
 {% for item in order_content %}
     {{ item.menu_item__title }} x{{ item.count }} {{ item.menu_item__price }}
