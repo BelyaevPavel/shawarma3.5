@@ -1,8 +1,9 @@
+{% csrf_token %}
 {% load static %}
 <link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
 <script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/buyer_queue_handlers.js' %}"></script>
-<input hidden id="urls" data-refresh-url="{% url 'buyer_queue_ajax' %}">
+<input hidden id="urls" data-refresh-url="{% url 'buyer_queue_ajax' %}" data-unvoice-url="{% url 'unvoice_order' %}">
 <div class="company-emblem">
     <img id="shawarma-header" src="{% static 'img/shawarma_tv.png' %}" >
 </div>

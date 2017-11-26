@@ -470,12 +470,18 @@ def voice_order(request, order_id):
 
 def unvoice_order(request):
     order_id = request.POST.get('id', None)
+    data = {
+        'success': False
+    }
     if order_id:
         order = get_object_or_404(Order, id=order_id)
         order.is_voiced = True
         order.save()
+        data = {
+            'success': True
+        }
 
-    return HttpResponse()
+    return JsonResponse(data=data)
 
 
 def voice_all(request):
@@ -491,8 +497,8 @@ def voice_all(request):
 @login_required()
 @permission_required('queue.add_order')
 def make_order(request):
-    servery_ip = request.META.get('HTTP_X_REAL_IP', '') or request.META.get('HTTP_X_FORWARDED_FOR', '')
-    # servery_ip = '127.0.0.1'
+    # servery_ip = request.META.get('HTTP_X_REAL_IP', '') or request.META.get('HTTP_X_FORWARDED_FOR', '')
+    servery_ip = '127.0.0.1'
     content = json.loads(request.POST['order_content'])
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])

@@ -19,10 +19,10 @@
                         Закрыть
                     </button>
                     <button onclick="PrintOrder({{ open_order.order.id }})">
-                        <img src="{% static "img/printing-text16.png" %}">
+                        <img src="{% static "img/printing-text24.png" %}">
                     </button>
                     <button onclick="VoiceOrder('{% url 'voice_order' open_order.order.id  %}')">
-                        <img src="{% static "img/printing-text16.png" %}">
+                        <img src="{% static "img/voice-icon.png" %}">
                     </button>
                 {% endif %}
                 {% if staff_category.title == 'Cashier' %}
