@@ -7,7 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Max, Count, Avg, F
 from hashlib import md5
-from shawarma.settings import TIME_ZONE, LISTNER_URL, PRINTER_URL
+from shawarma.settings import TIME_ZONE, LISTNER_URL, LISTNER_PORT, PRINTER_URL
 import requests
 import datetime
 import json
