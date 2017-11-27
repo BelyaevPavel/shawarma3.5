@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 import psycopg2.extensions
-from my_settings import login, password, db_name, allowed_hosts, debug_flag, listner_url, printer_url
+from my_settings import login, password, db_name, allowed_hosts, debug_flag, listner_url, listner_port, printer_url
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -134,6 +134,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 LISTNER_URL = listner_url
+
+LISTNER_PORT = listner_port
 
 PRINTER_URL = printer_url
 
