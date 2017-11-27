@@ -55,8 +55,8 @@ def buyer_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        supplement_completed=False, is_canceled=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by(
-        'open_time')
+                                        content_completed=True, supplement_completed=True, is_ready=True,
+                                        is_canceled=False).order_by('open_time')
     context = {
         'open_orders': open_orders,
         'ready_orders': ready_orders
@@ -69,8 +69,8 @@ def buyer_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                        supplement_completed=False, is_canceled=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True, is_canceled=False).order_by(
-        'open_time')
+                                        content_completed=True, supplement_completed=True, is_ready=True,
+                                        is_canceled=False).order_by('open_time')
     context = {
         'open_orders': open_orders,
         'ready_orders': ready_orders
@@ -87,7 +87,7 @@ def buyer_queue_ajax(request):
 @login_required()
 def current_queue(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       is_canceled=False, supplement_completed=False).order_by('open_time')
+                                       is_canceled=False).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                         is_canceled=False, content_completed=True, supplement_completed=True,
                                         is_ready=True).order_by('open_time')
@@ -126,7 +126,7 @@ def current_queue(request):
 @login_required()
 def current_queue_ajax(request):
     open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       is_canceled=False, supplement_completed=False).order_by('open_time')
+                                       is_canceled=False,).order_by('open_time')
     ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
                                         is_canceled=False, content_completed=True, supplement_completed=True,
                                         is_ready=True).order_by('open_time')
@@ -340,7 +340,7 @@ def cook_interface(request):
 def c_i_a(request):
     user = request.user
     staff = Staff.objects.get(user=user)
-    print u"AJAX from {}".format(user)
+    # print u"AJAX from {}".format(user)
     context = None
     taken_order_content = None
     taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,

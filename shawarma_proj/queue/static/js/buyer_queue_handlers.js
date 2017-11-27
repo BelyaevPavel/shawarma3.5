@@ -84,26 +84,23 @@ function process_numbers(updated_ready_numbers, voiced_flags) {
 }
 
 function sound_number(value) {
-    /*$.each(difference, function (index, value) {
-     setTimeout(function () {
-     aux_str = '#speaker-' + value;
-     console.log(aux_str);
-     console.log('Playing...');
-     setTimeout(function () {
-     $('#speaker-order')[0].play();
-     }, 0);
-     $('#speaker-order')[0].load();
-     setTimeout(function () {
-     $('#speaker-number')[0].play();
-     }, 750);
-     $('#speaker-number')[0].load();
-     setTimeout(function () {
-     $(aux_str)[0].play();
-     }, 1500);
-     $(aux_str)[0].load();
-     }, 3000 * index);
-     });*/
+    var decimals = False;
+    var hundreds = False;
+    if (value > 20 && value % 10 != 0)
+    {
+        decimals = True;
+        if (value > 100)
+            hundreds = True;
+    }
     aux_str = '#speaker-' + value;
+    aux_str_100 = '';
+    aux_str_10 = '';
+    if (hundreds){
+        aux_str_100 = '#speaker-' + Math.floor(value/100)*100;
+    }
+    if (decimals){
+        aux_str_10 = '#speaker-' + (value - Math.floor(value/100)*100);
+    }
     console.log(aux_str);
     console.log('Playing...');
     setTimeout(function () {
