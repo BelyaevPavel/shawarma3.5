@@ -33,7 +33,7 @@ function CloseOrder(order_id) {
                 data: {"order_id": order_id},
                 dataType: 'json',
                 success: function (data) {
-                    alert('Заказ закрыт!');
+                    //alert('Заказ закрыт!');
                 },
                 complete: function () {
                     location.reload();

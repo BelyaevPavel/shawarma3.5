@@ -16,7 +16,10 @@
     </div>
     {% for ready_order in ready_orders %}
         <div class="ready-order-display">
-            {{ ready_order.daily_number }} {{ ready_order.servery }}
+            <span class="ready-order-display-number">
+                {{ ready_order.daily_number }}
+            </span>
+            {{ ready_order.servery }}
         </div>
     {% empty %}
     {% endfor %}
