@@ -445,7 +445,8 @@ def print_order(request, order_id):
     order_info.printed = True
     order_info.save()
     order_content = OrderContent.objects.filter(order_id=order_id).values('menu_item__title',
-                                                                          'menu_item__price').annotate(
+                                                                          'menu_item__price',
+                                                                          ).annotate(
         count=Count('menu_item__title'))
     template = loader.get_template('queue/print_order_wh.html')
     context = {
@@ -570,11 +571,12 @@ def make_order(request):
     order.content_completed = not content_presence
     order.supplement_completed = not supplement_presence
     order.save()
-    # if order.is_paid:
-    print "Sending request to " + order.servery.ip_address
-    print order
-    requests.post('http://'+order.servery.ip_address+':'+LISTNER_PORT, json=prepare_json_check(order))
-    print "Request sended."
+    if order.is_paid:
+        print "Sending request to " + order.servery.ip_address
+        print order
+        requests.post('http://'+order.servery.ip_address+':'+LISTNER_PORT, json=prepare_json_check(order))
+        print "Request sended."
+
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
     return JsonResponse(data)

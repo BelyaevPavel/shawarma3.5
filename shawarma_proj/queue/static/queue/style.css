@@ -116,12 +116,17 @@ div.open-orders-container, div.ready-orders-container {
 
 div.open-order-display, div.ready-order-display {
     text-align: center;
-    font-size: xx-large;
+    font-size: 50px;
     float: left;
     width: 100%;
-    line-height: 2;
+    line-height: 1.4;
     border-top: solid 1px #D8D8D8;
     border-bottom: solid 1px #D8D8D8;
+}
+
+span.ready-order-display-number {
+    color: #901515;
+    font-weight: bold;
 }
 
 div.open-order-display {
@@ -169,15 +174,21 @@ div.order-block {
     line-height: 20px;
 }
 
+div.order-block-header {
+    line-height: 25px;
+}
+
 div.order-number {
-    width: 20%;
+    width: 30%;
     float: left;
+    font-size: large;
 }
 
 div.order-cook-part {
-    width: 80%;
+    width: 70%;
     float: left;
     text-align: right;
+    font-size: large;
 }
 
 div.order-cook-part a {
