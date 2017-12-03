@@ -29,6 +29,33 @@ function ReadyOrder(id) {
     }
 }
 
+function PayOrder(id) {
+    var url = $('#urls').attr('data-pay-url');
+    var confirmation = confirm("Заказ оплачен?");
+    if (confirmation) {
+        console.log(id + ' ' + url);
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken)
+            }
+        });
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: {
+                'id': id
+            },
+            dataType: 'json',
+            success: function (data) {
+                location.href = $('#current-queue').parent().attr('href');
+                //if (data['success']) {
+                //    alert('Success!');
+                //}
+            }
+        });
+    }
+}
+
 function PrintOrder(order_id) {
     $.get('/queue/order/print/'+order_id+'/');
 }
