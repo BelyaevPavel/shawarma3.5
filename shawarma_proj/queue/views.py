@@ -58,8 +58,8 @@ def buyer_queue(request):
                                         content_completed=True, supplement_completed=True, is_ready=True,
                                         is_canceled=False).order_by('open_time')
     context = {
-        'open_orders': open_orders,
-        'ready_orders': ready_orders
+        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 100} for order in open_orders],
+        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 100} for order in ready_orders]
     }
     template = loader.get_template('queue/buyer_queue.html')
     return HttpResponse(template.render(context, request))
@@ -72,8 +72,8 @@ def buyer_queue_ajax(request):
                                         content_completed=True, supplement_completed=True, is_ready=True,
                                         is_canceled=False).order_by('open_time')
     context = {
-        'open_orders': open_orders,
-        'ready_orders': ready_orders
+        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 100} for order in open_orders],
+        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 100} for order in ready_orders]
     }
     template = loader.get_template('queue/buyer_queue_ajax.html')
     data = {
@@ -445,7 +445,8 @@ def print_order(request, order_id):
     order_info.printed = True
     order_info.save()
     order_content = OrderContent.objects.filter(order_id=order_id).values('menu_item__title', 'menu_item__price',
-                                                                          ).annotate(count=Count('menu_item__title'))
+                                                                          'note').annotate(
+        count_titles=Count('menu_item__title')).annotate(count_notes=Count('note'))
     template = loader.get_template('queue/print_order_wh.html')
     context = {
         'order_info': order_info,

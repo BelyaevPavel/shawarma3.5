@@ -68,6 +68,8 @@
         Места выдачи внесены.
     {% endfor %}
     <button onclick="ReadyOrder({{ order_info.id }})" {% if not ready %}disabled{% endif %}>Заказ готов</button>
-    <button onclick="PayOrder({{ order_info.id }})" {% if not order_info.is_paid %}disabled{% endif %}>Оплатить</button>
+    {% if staff_category.title == 'Cachier' %}
+        <button onclick="PayOrder({{ order_info.id }})" {% if order_info.is_paid %}disabled{% endif %}>Оплатить</button>
+    {% endif %}
     <button onclick="PrintOrder({{ order_info.id }})">Печать</button>
 {% endblock %}

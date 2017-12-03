@@ -49,7 +49,7 @@ function refresher() {
 
         },
         complete: function () {
-            setTimeout(refresher, 7000);
+            setTimeout(refresher, 5000);
         }
     });
 }
