@@ -49,7 +49,7 @@ function refresher() {
 
         },
         complete: function () {
-            setTimeout(refresher, 10000);
+            setTimeout(refresher, 7000);
         }
     });
 }
@@ -108,13 +108,13 @@ function sound_number(value) {
             $('#speaker-number')[0].load();
             setTimeout(function () {
                 $(aux_str_100)[0].play();
-            }, 1500);
+            }, 1250);
             setTimeout(function () {
                 $(aux_str_10)[0].play();
-            }, 2250);
+            }, 2500);
             setTimeout(function () {
                 $(aux_str)[0].play();
-            }, 3000);
+            }, 3500);
             $(aux_str)[0].load();
         }
         else {
@@ -129,7 +129,7 @@ function sound_number(value) {
             $('#speaker-order')[0].load();
             setTimeout(function () {
                 $('#speaker-number')[0].play();
-            }, 750);
+            }, 1500);
             $('#speaker-number')[0].load();
             setTimeout(function () {
                 $(aux_str_10)[0].play();
