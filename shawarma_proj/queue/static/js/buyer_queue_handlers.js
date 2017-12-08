@@ -129,14 +129,14 @@ function sound_number(value) {
             $('#speaker-order')[0].load();
             setTimeout(function () {
                 $('#speaker-number')[0].play();
-            }, 1500);
+            }, 750);
             $('#speaker-number')[0].load();
             setTimeout(function () {
                 $(aux_str_10)[0].play();
             }, 1500);
             setTimeout(function () {
                 $(aux_str)[0].play();
-            }, 2250);
+            }, 2150);
             $(aux_str)[0].load();
         }
 

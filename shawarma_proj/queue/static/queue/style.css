@@ -141,6 +141,7 @@ div.order-div {
     width: 280px;
     padding-left: 5px;
     padding-right: 5px;
+    padding-top: 10px;
     float: right;
     right: 0px;
 }
