@@ -30,5 +30,6 @@ urlpatterns = [
     url(r'^c_i_a', views.c_i_a, name="cook_interface_ajax"),
     url(r'^redirection', views.redirection, name="redirection"),
     url(r'^buyer_queue', views.buyer_queue, name="buyer_queue"),
-    url(r'^statistics', views.statistic_page, name="statistics")
+    url(r'^statistics', views.statistic_page, name="statistics"),
+    url(r'^logout_link', views.logout_view, name="logout_link")
 ]
