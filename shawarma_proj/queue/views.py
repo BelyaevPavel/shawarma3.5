@@ -204,7 +204,7 @@ def cook_interface(request):
         taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
                                             open_time__contains=datetime.date.today(), is_canceled=False,
                                             content_completed=False,
-                                            close_time__isnull=True),
+                                            close_time__isnull=True).order_by('open_time'),
         has_order = False
         if taken_orders[0]:
             taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
@@ -366,7 +366,7 @@ def c_i_a(request):
     taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
                                         open_time__contains=datetime.date.today(), is_canceled=False,
                                         content_completed=False,
-                                        close_time__isnull=True),
+                                        close_time__isnull=True).order_by('open_time'),
     has_order = False
     if taken_orders[0]:
         taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],

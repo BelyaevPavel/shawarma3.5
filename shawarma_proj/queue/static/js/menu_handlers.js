@@ -39,7 +39,7 @@ $(function () {
                         },
                         dataType: 'json',
                         success: function (data) {
-                            alert('Заказ добавлен!');
+                            alert('Заказ №' + data.daily_number + ' добавлен!');
                             currOrder = [];
                             DrawOrderTable();
                             CalculateTotal();
