@@ -10,7 +10,7 @@
                 <a href="{% url 'order_content' open_order.order.id %}">№ {{ open_order.order.daily_number }}</a>
             </div>
             <div class="order-cook-part  {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}ready{% endif %}">
-                <a href="{% url 'order_content' open_order.order.id %}">({{ open_order.cook_part_ready_count.count }}/{{ open_order.cook_part_count.count }})</a>
+                <a href="{% url 'order_content' open_order.order.id %}">{{ open_order.order.prepared_by.user.first_name }} ({{ open_order.cook_part_ready_count.count }}/{{ open_order.cook_part_count.count }})</a>
             </div>
             <div class="order-block-actions">
                 {% if staff_category.title == 'Operator' %}
@@ -21,9 +21,11 @@
                     <button onclick="PrintOrder({{ open_order.order.id }})">
                         <img src="{% static "img/printing-text24.png" %}">
                     </button>
-                    <button onclick="VoiceOrder('{% url 'voice_order' open_order.order.id  %}')">
-                        <img src="{% static "img/voice-icon.png" %}">
-                    </button>
+                    {% if open_order.order.is_ready %}
+                        <button onclick="VoiceOrder('{% url 'voice_order' open_order.order.id  %}')">
+                            <img src="{% static "img/voice-icon.png" %}">
+                        </button>
+                    {% endif %}
                 {% endif %}
                 {% if staff_category.title == 'Cashier' %}
                     <button onclick="CancelOrder({{ open_order.order.id }})">

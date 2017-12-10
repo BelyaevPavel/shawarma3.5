@@ -33,7 +33,7 @@ def redirection(request):
 def logout_view(request):
     user = request.user
     staff = Staff.objects.get(user=user)
-    if not staff.available:
+    if staff.available:
         staff.available = False
         staff.save()
     logout(request)
@@ -56,7 +56,7 @@ def menu(request):
     template = loader.get_template('queue/menu_page.html')
     context = {
         'user': request.user,
-        'available_cookers': Staff.objects.filter(user__last_login__contains=datetime.date.today(),
+        'available_cookers': Staff.objects.filter(user__last_login__contains=datetime.date.today(), available=True,
                                                   staff_category__title__iexact='Cook'),
         'staff_category': StaffCategory.objects.get(staff__user=request.user),
         'menu_items': menu_items,
@@ -224,6 +224,10 @@ def cook_interface(request):
                 taken_order_content = OrderContent.objects.filter(order=free_order,
                                                                   menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
                     'id')
+                taken_order_in_grill_content = OrderContent.objects.filter(order=free_order,
+                                                                           grill_timestamp__isnull=False,
+                                                                           menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                    'id')
                 # ALERT! Only SuperGuy can handle this amount of shawarma!!!
                 if len(taken_order_content) > 6:
                     if staff.super_guy:
@@ -240,18 +244,28 @@ def cook_interface(request):
                         'free_order': free_order,
                         'order_content': [{'number': number,
                                            'item': item} for number, item in enumerate(taken_order_content, start=1)],
+                        'in_grill_content': [{'number': number,
+                                              'item': item} for number, item in
+                                             enumerate(taken_order_in_grill_content, start=1)],
                         'staff_category': staff
                     }
 
                 break
         else:
-            taken_order_content = \
-                OrderContent.objects.filter(order=taken_orders[0][0],
-                                            menu_item__can_be_prepared_by__title__iexact='Cook').order_by('id')
+            taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                'id')
+            taken_order_in_grill_content = OrderContent.objects.filter(order=taken_orders[0][0],
+                                                                       grill_timestamp__isnull=False,
+                                                                       menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                'id')
             context = {
                 'free_order': taken_orders[0][0],
                 'order_content': [{'number': number,
                                    'item': item} for number, item in enumerate(taken_order_content, start=1)],
+                'in_grill_content': [{'number': number,
+                                      'item': item} for number, item in
+                                     enumerate(taken_order_in_grill_content, start=1)],
                 'staff_category': staff
             }
 
@@ -595,7 +609,7 @@ def make_order(request):
     if order.is_paid:
         print "Sending request to " + order.servery.ip_address
         print order
-        requests.post('http://'+order.servery.ip_address+':'+LISTNER_PORT, json=prepare_json_check(order))
+        requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
         print "Request sent."
 
     data["total"] = order.total
@@ -997,10 +1011,10 @@ def prepare_json_check(order):
         number += 1
         sum += item['menu_item__price'] * item['total']
 
-    cook_name = u"{}".format(order.prepared_by)
+    cook_name = u"{}".format(order.prepared_by.user.first_name)
     order_number = str(order.daily_number)
 
-    print u"Cash: {}".format(aux_query[0]['order__paid_with_cash']);
+    print u"Cash: {}".format(aux_query[0]['order__paid_with_cash'])
     if aux_query[0]['order__paid_with_cash']:
         pay_rows.append({
             u"НомерСтроки": 1,

@@ -106,6 +106,7 @@ class OrderContent(models.Model):
     is_canceled = models.BooleanField(verbose_name="Is canceled", default=False)
     canceled_by = models.ForeignKey(Staff, related_name="content_canceler", verbose_name="Canceled By", null=True)
     note = models.CharField(max_length=500, default="")
+    quantity = models.FloatField(verbose_name="Quantity", default=1.0, null=False)
 
     def __str__(self):
         return u"№{} {}".format(self.order, self.menu_item)
