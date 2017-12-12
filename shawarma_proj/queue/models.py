@@ -82,6 +82,7 @@ class Order(models.Model):
     prepared_by = models.ForeignKey(Staff, related_name="maker", default=None, null=True)
     printed = models.BooleanField(default=False, verbose_name="Check Printed")
     is_paid = models.BooleanField(default=False, verbose_name="Is Paid")
+    is_grilling = models.BooleanField(default=False, verbose_name="Is Grilling")
     is_ready = models.BooleanField(default=False, verbose_name="Is Ready")
     is_voiced = models.BooleanField(default=False, verbose_name="Is Voiced")
     # True - if paid with cash, False - if paid with card.

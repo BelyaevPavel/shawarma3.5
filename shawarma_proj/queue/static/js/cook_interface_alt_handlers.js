@@ -9,7 +9,7 @@ $(document).ready(function () {
     $('#cook_interface').addClass('active');
     AdjustLineHeight();
     //GrillRefresher();
-    NextRefresher();
+    Refresher();
 });
 $(window).resize(AdjustLineHeight);
 
@@ -38,7 +38,7 @@ function GrillRefresher() {
     });
 }
 
-function NextRefresher() {
+function Refresher() {
     console.log("NextRefresher");
     var url = $('#urls').attr('data-ajax');
     $.ajaxSetup({
@@ -50,18 +50,18 @@ function NextRefresher() {
         type: 'POST',
         url: url,
         dataType: 'json',
-        data: {'id': '0'},
+        data: {'order_id': $('div.cook-daily-number').attr('order-id')},
         success: function (data) {
             console.log("success");
             console.log(data['html']);
-            $('div#inner-content').html(JSON.parse(data['html']));
+            $('#selected-order-content').html(data['html']);
         },
         complete: function () {
-            setTimeout(NextRefresher, 10000);
+            setTimeout(Refresher, 10000);
         }
     }).fail(function () {
-            alert('У вас нет прав!');
-        });
+        alert('У вас нет прав!');
+    });
 }
 
 
@@ -162,6 +162,7 @@ function FinishItemCooking(id) {
     }
 }
 
+
 function FinishAllContent(id) {
     var url = $('#urls').attr('data-finish-all-content-url');
     var confirmation = true;
@@ -186,4 +187,54 @@ function FinishAllContent(id) {
             }
         });
     }
+}
+
+
+function GrillAllContent(id) {
+    var url = $('#urls').attr('data-grill-all-content-url');
+    var confirmation = true;
+    if (confirmation) {
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken)
+            }
+        });
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: {
+                'order_id': id
+            },
+            dataType: 'json',
+            success: function (data) {
+                alert('Положите в заказ №' + data['order_number']);
+            },
+            complete: function () {
+                location.reload();
+            }
+        });
+    }
+}
+
+
+function SelectOrder(id) {
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken)
+        }
+    });
+    $.ajax({
+            type: 'POST',
+            url: $('#urls').attr('data-select-url'),
+            data: {"order_id": id},
+            dataType: 'json',
+            success: function (data) {
+                if(data['success']){
+                    $('#selected-order-content').html(data['html']);
+                }
+            }
+        }
+    ).fail(function () {
+        console.log('Failed ' + aux);
+    });
 }

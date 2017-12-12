@@ -73,7 +73,8 @@ def buyer_queue(request):
                                         is_canceled=False).order_by('open_time')
     context = {
         'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in open_orders],
-        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in ready_orders]
+        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in
+                         ready_orders]
     }
     template = loader.get_template('queue/buyer_queue.html')
     return HttpResponse(template.render(context, request))
@@ -87,7 +88,8 @@ def buyer_queue_ajax(request):
                                         is_canceled=False).order_by('open_time')
     context = {
         'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in open_orders],
-        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in ready_orders]
+        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in
+                         ready_orders]
     }
     template = loader.get_template('queue/buyer_queue_ajax.html')
     data = {
@@ -364,78 +366,207 @@ def cook_interface(request):
         template = loader.get_template('queue/cook_interface.html')
         return HttpResponse(template.render(context, request))
 
-    return new_processor(request)
+    def new_processor_with_queue(request):
+        user = request.user
+        staff = Staff.objects.get(user=user)
+        if not staff.available:
+            staff.available = True
+            staff.save()
+        context = None
+        taken_order_content = None
+        new_order = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
+                                         open_time__contains=datetime.date.today(), is_canceled=False,
+                                         content_completed=False, is_grilling=False,
+                                         close_time__isnull=True).order_by('open_time')
+        other_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
+                                            open_time__contains=datetime.date.today(), is_canceled=False,
+                                            close_time__isnull=True).order_by('open_time')
+        has_order = False
+        if len(new_order)>0:
+            new_order = new_order[0]
+            taken_order_content = OrderContent.objects.filter(order=new_order,
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook',
+                                                              finish_timestamp__isnull=True).order_by('id')
+            if len(taken_order_content) > 0:
+                has_order = True
+
+        # if not has_order:
+        #     free_orders = Order.objects.filter(prepared_by__isnull=True, is_canceled=False,
+        #                                        open_time__contains=datetime.date.today()).order_by('open_time')
+        #
+        #     for free_order in free_orders:
+        #         taken_order_content = OrderContent.objects.filter(order=free_order,
+        #                                                           menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+        #             'id')
+        #         taken_order_in_grill_content = OrderContent.objects.filter(order=free_order,
+        #                                                                    grill_timestamp__isnull=False,
+        #                                                                    menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+        #             'id')
+        #         # ALERT! Only SuperGuy can handle this amount of shawarma!!!
+        #         if len(taken_order_content) > 6:
+        #             if staff.super_guy:
+        #                 free_order.prepared_by = staff
+        #             else:
+        #                 continue
+        #         else:
+        #             free_order.prepared_by = staff
+        #
+        #         if free_order.prepared_by == staff:
+        #             free_order.save()
+        #             # print "Free orders prepared_by: {}".format(free_order.prepared_by)
+        #             context = {
+        #                 'free_order': free_order,
+        #                 'order_content': [{'number': number,
+        #                                    'item': item} for number, item in enumerate(taken_order_content, start=1)],
+        #                 'in_grill_content': [{'number': number,
+        #                                       'item': item} for number, item in
+        #                                      enumerate(taken_order_in_grill_content, start=1)],
+        #                 'staff_category': staff
+        #             }
+        #
+        #         break
+        # else:
+        taken_order_content = OrderContent.objects.filter(order=new_order,
+                                                          menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+            'id')
+        taken_order_in_grill_content = OrderContent.objects.filter(order=new_order,
+                                                                   grill_timestamp__isnull=False,
+                                                                   menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+            'id')
+        context = {
+            'free_order': new_order,
+            'order_content': [{'number': number,
+                               'item': item} for number, item in enumerate(taken_order_content, start=1)],
+            'in_grill_content': [{'number': number,
+                                  'item': item} for number, item in
+                                 enumerate(taken_order_in_grill_content, start=1)],
+            'cooks_orders': [{'order': cooks_order,
+                              'cook_content_count': len(OrderContent.objects.filter(order=cooks_order,
+                                                                                    menu_item__can_be_prepared_by__title__iexact='cook'))}
+                             for cooks_order in other_orders],
+            'staff_category': staff
+        }
+
+        template = loader.get_template('queue/cook_interface_with_queue.html')
+        return HttpResponse(template.render(context, request))
+
+    return new_processor_with_queue(request)
 
 
 @login_required()
 def c_i_a(request):
-    user = request.user
-    staff = Staff.objects.get(user=user)
-    if not staff.available:
-        staff.available = True
-        staff.save()
-    # print u"AJAX from {}".format(user)
-    context = None
-    taken_order_content = None
-    taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
-                                        open_time__contains=datetime.date.today(), is_canceled=False,
-                                        content_completed=False,
-                                        close_time__isnull=True).order_by('open_time'),
-    has_order = False
-    if taken_orders[0]:
-        taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
-                                                          menu_item__can_be_prepared_by__title__iexact='Cook',
-                                                          finish_timestamp__isnull=True).order_by('id')
-        if len(taken_order_content) > 0:
-            has_order = True
-    # print "Orders: {}".format(taken_orders)
-    # print "Order: {}".format(taken_orders[0][0])
-    # print "Has order: {}. Content compleated: {}".format(has_order, taken_orders[0][0].content_completed)
+    def new_processor(request):
+        user = request.user
+        staff = Staff.objects.get(user=user)
+        if not staff.available:
+            staff.available = True
+            staff.save()
+        # print u"AJAX from {}".format(user)
+        context = None
+        taken_order_content = None
+        taken_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
+                                            open_time__contains=datetime.date.today(), is_canceled=False,
+                                            content_completed=False,
+                                            close_time__isnull=True).order_by('open_time'),
+        has_order = False
+        if taken_orders[0]:
+            taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook',
+                                                              finish_timestamp__isnull=True).order_by('id')
+            if len(taken_order_content) > 0:
+                has_order = True
+        # print "Orders: {}".format(taken_orders)
+        # print "Order: {}".format(taken_orders[0][0])
+        # print "Has order: {}. Content compleated: {}".format(has_order, taken_orders[0][0].content_completed)
 
-    if not has_order:
-        free_orders = Order.objects.filter(prepared_by__isnull=True, is_canceled=False,
-                                           open_time__contains=datetime.date.today()).order_by('open_time')
+        if not has_order:
+            free_orders = Order.objects.filter(prepared_by__isnull=True, is_canceled=False,
+                                               open_time__contains=datetime.date.today()).order_by('open_time')
 
-        for free_order in free_orders:
-            taken_order_content = OrderContent.objects.filter(order=free_order,
+            for free_order in free_orders:
+                taken_order_content = OrderContent.objects.filter(order=free_order,
+                                                                  menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                    'id')
+                # ALERT! Only SuperGuy can handle this amount of shawarma!!!
+                if len(taken_order_content) > 6:
+                    if staff.super_guy:
+                        free_order.prepared_by = staff
+                    else:
+                        continue
+                else:
+                    free_order.prepared_by = staff
+
+                if free_order.prepared_by == staff:
+                    free_order.save()
+                    # print "Free orders prepared_by: {}".format(free_order.prepared_by)
+                    context = {
+                        'free_order': free_order,
+                        'order_content': [{'number': number,
+                                           'item': item} for number, item in enumerate(taken_order_content, start=1)],
+                        'staff_category': staff
+                    }
+
+                break
+        else:
+            taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
                                                               menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
                 'id')
-            # ALERT! Only SuperGuy can handle this amount of shawarma!!!
-            if len(taken_order_content) > 6:
-                if staff.super_guy:
-                    free_order.prepared_by = staff
-                else:
-                    continue
-            else:
-                free_order.prepared_by = staff
+            context = {
+                'free_order': taken_orders[0][0],
+                'order_content': [{'number': number,
+                                   'item': item} for number, item in enumerate(taken_order_content, start=1)],
+                'staff_category': staff
+            }
 
-            if free_order.prepared_by == staff:
-                free_order.save()
-                # print "Free orders prepared_by: {}".format(free_order.prepared_by)
-                context = {
-                    'free_order': free_order,
-                    'order_content': [{'number': number,
-                                       'item': item} for number, item in enumerate(taken_order_content, start=1)],
-                    'staff_category': staff
-                }
+        template = loader.get_template('queue/cook_interface_alt_ajax.html')
+        data = {
+            'html': json.dumps(template.render(context, request))
+        }
+        return JsonResponse(data)
 
-            break
-    else:
-        taken_order_content = OrderContent.objects.filter(order=taken_orders[0][0],
+    def queue_processor(request):
+        user = request.user
+        staff = Staff.objects.get(user=user)
+        if not staff.available:
+            staff.available = True
+            staff.save()
+        context = None
+        taken_order_content = None
+        new_order = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
+                                         open_time__contains=datetime.date.today(), is_canceled=False,
+                                         content_completed=False, is_grilling=False,
+                                         close_time__isnull=True).order_by('open_time')
+        has_order = False
+        if len(new_order) > 0:
+            new_order = new_order[0]
+            taken_order_content = OrderContent.objects.filter(order=new_order,
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook',
+                                                              finish_timestamp__isnull=True).order_by('id')
+            if len(taken_order_content) > 0:
+                has_order = True
+
+        taken_order_content = OrderContent.objects.filter(order=new_order,
                                                           menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
             'id')
+        taken_order_in_grill_content = OrderContent.objects.filter(order=new_order,
+                                                                   grill_timestamp__isnull=False,
+                                                                   menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+            'id')
         context = {
-            'free_order': taken_orders[0][0],
+            'selected_order': new_order,
             'order_content': [{'number': number,
                                'item': item} for number, item in enumerate(taken_order_content, start=1)],
             'staff_category': staff
         }
+        template = loader.get_template('queue/selected_order_content.html')
+        data = {
+            'success': True,
+            'html': template.render(context, request)
+        }
 
-    template = loader.get_template('queue/cook_interface_alt_ajax.html')
-    data = {
-        'html': json.dumps(template.render(context, request))
-    }
-    return JsonResponse(data)
+        return JsonResponse(data=data)
+
+    return queue_processor(request)
 
 
 @login_required()
@@ -513,6 +644,27 @@ def unvoice_order(request):
         order.save()
         data = {
             'success': True
+        }
+
+    return JsonResponse(data=data)
+
+
+def select_order(request):
+    order_id = request.POST.get('order_id', None)
+    data = {
+        'success': False
+    }
+    if order_id:
+        context = {
+            'selected_order': get_object_or_404(Order, id=order_id),
+            'order_content': [{'number': number,
+                               'item': item} for number, item in enumerate(OrderContent.objects.filter(order__id=order_id,
+                                                         menu_item__can_be_prepared_by__title__iexact='Cook'), start=1)]
+        }
+        template = loader.get_template('queue/selected_order_content.html')
+        data = {
+            'success': True,
+            'html': template.render(context, request)
         }
 
     return JsonResponse(data=data)
@@ -760,15 +912,27 @@ def take(request):
     return JsonResponse(data)
 
 
-@login_required()
-@permission_required('queue.can_cook')
+# @login_required()
+# @permission_required('queue.can_cook')
 def to_grill(request):
     product_id = request.POST.get('id', None)
     if product_id:
         product = OrderContent.objects.get(pk=product_id)
         product.grill_timestamp = datetime.datetime.now()
         product.is_in_grill = True
+        if product.staff_maker is None:
+            staff_maker = Staff.objects.get(user=request.user)
+            product.staff_maker = staff_maker
+            product.start_timestamp = datetime.datetime.now()
         product.save()
+        order_content = OrderContent.objects.filter(order_id=product.order_id)
+        flag = True
+        for item in order_content:
+            if not item.is_in_grill:
+                flag = False
+        if flag:
+            product.order.is_grilling = True
+            product.order.save()
     data = {
         'success': True,
         'product_id': product_id,
@@ -837,19 +1001,49 @@ def finish_cooking(request):
     return JsonResponse(data)
 
 
-@login_required()
-@permission_required('queue.can_cook')
+# @login_required()
+# @permission_required('queue.can_cook')
 def finish_all_content(request):
     order_id = request.POST.get('id', None)
     if order_id:
         order = Order.objects.get(id=order_id)
         products = OrderContent.objects.filter(order=order, menu_item__can_be_prepared_by__title__iexact='Cook')
         for product in products:
-            product.start_timestamp = datetime.datetime.now()
+            product.is_in_grill = False
             product.finish_timestamp = datetime.datetime.now()
-            product.staff_maker = Staff.objects.get(user=request.user)
+            if product.start_timestamp is None:
+                product.start_timestamp = datetime.datetime.now()
+            if product.staff_maker is None:
+                product.staff_maker = Staff.objects.get(user=request.user)
             product.save()
         order.content_completed = True
+        # print "saving"
+        order.save()
+        data = {
+            'success': True
+        }
+    else:
+        data = {
+            'success': False
+        }
+
+    return JsonResponse(data)
+
+
+# @login_required()
+# @permission_required('queue.can_cook')
+def grill_all_content(request):
+    order_id = request.POST.get('order_id', None)
+    if order_id:
+        order = Order.objects.get(id=order_id)
+        products = OrderContent.objects.filter(order=order, menu_item__can_be_prepared_by__title__iexact='Cook')
+        for product in products:
+            product.start_timestamp = datetime.datetime.now()
+            product.grill_timestamp = datetime.datetime.now()
+            product.is_in_grill = True
+            product.staff_maker = Staff.objects.get(user=request.user)
+            product.save()
+        order.is_grilling = True
         # print "saving"
         order.save()
         data = {
