@@ -555,3 +555,25 @@ div.cook-complite-all-button {
     font-size: xx-large;
     cursor: pointer;
 }
+
+div.cook-order-queue-display {
+    width: 200px;
+    height: 100%;
+    float: left;
+    border-left: solid 2px #D8D8D8;
+}
+
+div.selected-order-display {
+    width: calc(100% - 205px);
+    height: 100%;
+    float: left;
+}
+
+div.cook-order-block-header {
+    height: 30px;
+    line-height: 2;
+}
+
+div.grilling {
+    background-color: #901515;
+}
