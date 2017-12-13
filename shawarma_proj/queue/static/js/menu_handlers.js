@@ -22,11 +22,7 @@ $(function () {
             var paid_with_cash = false;
             if ($('#paid_with_cash').is(':checked'))
                 paid_with_cash = true;
-            if (is_paid && paid_with_cash)
-            {
-                var cash = prompt("Введите полученную сумму:", "");
-                alert("Сдача: " + (parseInt(cash)-parseInt($('p.totalDisplay').text())))
-            }
+
             if (confirmation == true) {
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
@@ -44,7 +40,15 @@ $(function () {
                         },
                         dataType: 'json',
                         success: function (data) {
-                            alert('Заказ №' + data.daily_number + ' добавлен!');
+                            if (is_paid && paid_with_cash)
+                            {
+                                var cash = prompt('Заказ №' + data.daily_number + ' добавлен!, Введите полученную сумму:', "");
+                                alert("Сдача: " + (parseInt(cash)-parseInt($('p.totalDisplay').text())))
+                            }
+                            else
+                            {
+                                alert('Заказ №' + data.daily_number + ' добавлен!');
+                            }
                             currOrder = [];
                             DrawOrderTable();
                             CalculateTotal();
