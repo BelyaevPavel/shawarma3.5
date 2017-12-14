@@ -72,8 +72,8 @@ def buyer_queue(request):
                                         content_completed=True, supplement_completed=True, is_ready=True,
                                         is_canceled=False).order_by('open_time')
     context = {
-        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in open_orders],
-        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in
+        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 100} for order in open_orders],
+        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 100} for order in
                          ready_orders]
     }
     template = loader.get_template('queue/buyer_queue.html')
@@ -87,8 +87,8 @@ def buyer_queue_ajax(request):
                                         content_completed=True, supplement_completed=True, is_ready=True,
                                         is_canceled=False).order_by('open_time')
     context = {
-        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in open_orders],
-        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 1000} for order in
+        'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 100} for order in open_orders],
+        'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number % 100} for order in
                          ready_orders]
     }
     template = loader.get_template('queue/buyer_queue_ajax.html')
@@ -699,6 +699,9 @@ def make_order(request):
         else:
             order_next_number = 1
 
+    # if order_next_number % 100 == 0:
+        # order_next_number += 1
+
     order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number, is_paid=is_paid,
                   paid_with_cash=paid_with_cash)
     super_guy = Staff.objects.filter(super_guy=True, user__last_login__contains=datetime.date.today(),
@@ -1206,7 +1209,7 @@ def prepare_json_check(order):
         sum += item['menu_item__price'] * item['total']
 
     cook_name = u"{}".format(order.prepared_by.user.first_name)
-    order_number = str(order.daily_number)
+    order_number = str(order.daily_number % 100)
 
     print u"Cash: {}".format(aux_query[0]['order__paid_with_cash'])
     if aux_query[0]['order__paid_with_cash']:

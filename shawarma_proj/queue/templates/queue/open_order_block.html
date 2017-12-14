@@ -6,10 +6,22 @@
     shadowed
     {% endif %}">
         <div class="order-block-header">
-            <div class="order-number  {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}ready{% endif %}">
+            <div class="order-number    {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}
+                                            ready
+                                        {% else %}
+                                            {% if open_order.order.is_grilling %}
+                                                inGrill
+                                            {% endif %}
+                                        {% endif %}">
                 <a href="{% url 'order_content' open_order.order.id %}">№ {{ open_order.order.daily_number }}</a>
             </div>
-            <div class="order-cook-part  {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}ready{% endif %}">
+            <div class="order-cook-part {% if open_order.cook_part_count.count == 0 or open_order.cook_part_count.count == open_order.cook_part_ready_count.count %}
+                                            ready
+                                        {% else %}
+                                            {{% if open_order.order.is_grilling %}
+                                                inGrill
+                                            {% endif %}
+                                        {% endif %}">
                 <a href="{% url 'order_content' open_order.order.id %}">{{ open_order.order.prepared_by.user.first_name }} ({{ open_order.cook_part_ready_count.count }}/{{ open_order.cook_part_count.count }})</a>
             </div>
             <div class="order-block-actions">

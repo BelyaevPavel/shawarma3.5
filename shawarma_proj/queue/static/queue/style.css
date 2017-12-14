@@ -160,7 +160,7 @@ div.open-orders {
 }
 
 div.order-block-container {
-    width: 180px;
+    width: 220px;
     min-width: 180px;
     padding: 5px;
     float: left;
@@ -176,7 +176,7 @@ div.order-block {
 }
 
 div.order-block-header {
-    line-height: 25px;
+    line-height: 45px;
 }
 
 div.order-number {
@@ -190,6 +190,19 @@ div.order-cook-part {
     float: left;
     text-align: right;
     font-size: large;
+}
+
+div.cook-order-number {
+    width: 50%;
+    float: left;
+    font-size: xx-large;
+}
+
+div.cook-order-cook-part {
+    width: 50%;
+    float: left;
+    text-align: right;
+    font-size: xx-large;
 }
 
 div.order-cook-part a {
@@ -564,14 +577,14 @@ div.cook-order-queue-display {
 }
 
 div.selected-order-display {
-    width: calc(100% - 205px);
+    width: calc(100% - 235px);
     height: 100%;
     float: left;
 }
 
 div.cook-order-block-header {
-    height: 30px;
-    line-height: 2;
+    height: 100px;
+    line-height: 3;
 }
 
 div.grilling {
