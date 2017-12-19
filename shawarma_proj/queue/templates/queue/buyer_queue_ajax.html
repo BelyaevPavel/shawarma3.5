@@ -3,7 +3,7 @@
         <div class="open-order-display">
             Заказы в работе
         </div>
-    {% for open_order in open_orders %}
+    {% for open_order in display_open_orders %}
         <div class="open-order-display">
             {{ open_order.daily_number }}
         </div>
@@ -14,7 +14,7 @@
     <div class="open-order-display">
         Заказы на выдачу
     </div>
-    {% for ready_order in ready_orders %}
+    {% for ready_order in display_ready_orders %}
         <div class="ready-order-display">
             <span class="ready-order-display-number">
                 {{ ready_order.daily_number }}

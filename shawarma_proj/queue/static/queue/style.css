@@ -19,7 +19,7 @@ td.currentOrderTitleCell {
 
 td.currentOrderActionCell {
     border-bottom: 1pt solid black;
-    text-align: right;
+    text-align: center;
 }
 
 td.currentOrderTotalText {
@@ -144,6 +144,10 @@ div.order-div {
     padding-top: 10px;
     float: right;
     right: 0px;
+}
+
+div.order-div label {
+    font-size: large;
 }
 
 div.ready-orders {
@@ -303,7 +307,7 @@ div.menu-header-div {
 }
 
 div.menu-header-buttons {
-    min-width: 90px;
+    min-width: 95px;
     max-width: 33%;
     float: left;
     padding-left: 1px;
@@ -312,6 +316,7 @@ div.menu-header-buttons {
     border-right: solid 1px #D8D8D8;
     border-bottom: solid 1px #D8D8D8;
     cursor: pointer;
+    font-size: large;
 }
 
 div.header-who-logged {
@@ -533,8 +538,7 @@ div.cook-order-item {
 }
 
 div.in-progress-item {
-    background-color: yellow;
-    box-shadow: 0px 0px 50px 3px rgba(0, 0, 0, 0.5);
+    background-color: red;
     font-size: xx-large;
 }
 
@@ -589,4 +593,39 @@ div.cook-order-block-header {
 
 div.grilling {
     background-color: #901515;
+}
+
+div.stat-sect-container {
+    line-height: 60px;
+    height: 60px;
+    border-bottom: solid 2px #D8D8D8;
+    border-top: solid 1px #D8D8D8;
+    font-size: large;
+
+}
+
+div.stat-cook-name {
+    min-width: 20%;
+    font-size: larger;
+    float: left;
+    padding-left: 20px;
+}
+
+div.stat-cook-prepared-orders {
+    min-width: 10%;
+    font-size: larger;
+    float: left;
+    text-align: center;
+}
+
+div.stat-cook-prepared-products {
+    min-width: 10%;
+    font-size: larger;
+    text-align: center;
+}
+
+div.stat-cook-table-header {
+    font-size: small;
+    font-style: italic;
+    border-bottom: solid 1px #D8D8D8;
 }

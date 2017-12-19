@@ -62,7 +62,7 @@ function process_numbers(updated_ready_numbers, voiced_flags) {
             if (!voiced_flags[index]) {
                 aux = value;
                 console.log(aux);
-                sound_number(value);
+                sound_number(value % 100);
                 $.ajaxSetup({
                     beforeSend: function (xhr, settings) {
                         xhr.setRequestHeader("X-CSRFToken", csrftoken)
