@@ -5,13 +5,36 @@
 {% endblock %}
 {% block content %}
     <div class="stat-sect-container">
-        <div class="stat-view-container">
-            <div class="stat-view" id="person-prod-cooked">
-
+        Всего заказов: {{ total_orders }}
+        Отмененных заказов: {{ canceled_orders }}
+        <div class="stat-cook-table-header">
+            <div class="stat-cook-name">
+                Имя повара
+            </div>
+            <div class="stat-cook-prepared-orders">
+                Количество заказов
+            </div>
+            <div class="stat-cook-prepared-products">
+                Количество продуктов
             </div>
         </div>
-        <div class="stat-actions-container">
+        {% for cook in cooks %}
+            <div class="stat-view-container">
+                <div class="stat-view" id="person-prod-cooked">
+                    <div class="stat-cook-name">
+                        {{ cook.person.user.first_name }} {{ cook.person.user.last_name }}
+                    </div>
+                    <div class="stat-cook-prepared-orders">
+                        {{ cook.prepared_orders_count }}
+                    </div>
+                    <div class="stat-cook-prepared-products">
+                        {{ cook.prepared_products_count }}
+                    </div>
+                </div>
+            </div>
+            <div class="stat-actions-container">
 
-        </div>
+            </div>
+        {% endfor %}
     </div>
 {% endblock %}

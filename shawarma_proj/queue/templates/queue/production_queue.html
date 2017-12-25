@@ -5,14 +5,20 @@
                data-grill-url="{% url 'to_grill' %}" data-finish-url="{% url 'finish_cooking' %}">
             <thead>
             <tr>
-                <td>
-                    Title
+                <td class="currentOrderTitleCell">
+                    Заказ
                 </td>
-                <td>
-                    Note
+                <td class="currentOrderTitleCell">
+                    Наименование
                 </td>
-                <td>
-                    Actions
+                <td class="currentOrderTitleCell">
+                    Комментарий
+                </td>
+                <td class="currentOrderTitleCell">
+                    Повар
+                </td>
+                <td class="currentOrderActionCell">
+                    Действия
                 </td>
             </tr>
             </thead>
@@ -20,26 +26,6 @@
             {% for item in free_content %}
                 {% include 'queue/order_item.html' with item=item %}
             {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div>
-        <table class="currentOrderTable" id="items-grill">
-            <thead>
-            <tr>
-                <td>
-                    Title
-                </td>
-                <td>
-                    Note
-                </td>
-                <td>
-                    Actions
-                </td>
-            </tr>
-            </thead>
-            <tbody>
-
             </tbody>
         </table>
     </div>

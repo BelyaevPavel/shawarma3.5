@@ -15,6 +15,34 @@ function ReadyOrder(id) {
             type: 'POST',
             url: url,
             data: {
+                'id': id,
+                'servery_choose': $('[name=servery_choose]:checked').val()
+            },
+            dataType: 'json',
+            success: function (data) {
+                location.href = $('#current-queue').parent().attr('href');
+                //if (data['success']) {
+                //    alert('Success!');
+                //}
+            }
+        });
+    }
+}
+
+function PayOrder(id) {
+    var url = $('#urls').attr('data-pay-url');
+    var confirmation = confirm("Заказ оплачен?");
+    if (confirmation) {
+        console.log(id + ' ' + url);
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken)
+            }
+        });
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: {
                 'id': id
             },
             dataType: 'json',
@@ -29,8 +57,7 @@ function ReadyOrder(id) {
 }
 
 function PrintOrder(order_id) {
-    var url = '/queue/order/print/'+order_id+'/';
-    window.open(url, 'Печать заказа ' + order_id)
+    $.get('/queue/order/print/'+order_id+'/');
 }
 
 function CancelItem(id) {
@@ -79,7 +106,7 @@ function FinishCooking(id) {
         },
         dataType: 'json',
         success: function (data) {
-            alert('Success!' + data);
+            //alert('Success!' + data);
         },
         complete: function () {
             location.reload();

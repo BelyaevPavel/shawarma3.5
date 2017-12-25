@@ -33,7 +33,7 @@ function CloseOrder(order_id) {
                 data: {"order_id": order_id},
                 dataType: 'json',
                 success: function (data) {
-                    alert('Заказ закрыт!');
+                    //alert('Заказ закрыт!');
                 },
                 complete: function () {
                     location.reload();
@@ -49,8 +49,10 @@ function CloseOrder(order_id) {
 }
 
 function PrintOrder(order_id) {
-    var url = '/queue/order/print/'+order_id+'/';
-    window.open(url, 'Печать заказа ' + order_id);
+    var confirmation = confirm("Печатать заказ?");
+    if (confirmation == true) {
+        $.get('/queue/order/print/' + order_id + '/');
+    }
 }
 
 function CancelOrder(order_id) {
@@ -80,4 +82,12 @@ function CancelOrder(order_id) {
     else {
         event.preventDefault();
     }
+}
+
+function VoiceAll() {
+    $.get($('#urls').attr('voice-all-url'));
+}
+
+function VoiceOrder(id) {
+    $.get(id);
 }

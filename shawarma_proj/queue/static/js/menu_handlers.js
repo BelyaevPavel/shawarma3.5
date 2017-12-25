@@ -13,43 +13,59 @@ var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 
 $(function () {
     $('.subm').on('click', function (event) {
-        var confirmation = confirm("Подтвердить заказ?");
-        var form = $('.subm');
-        var is_paid = true;
-        if ($('#is_paid').is(':checked'))
-            is_paid = false;
-        var paid_with_cash = true;
-        if ($('#paid_with_cash').is(':checked'))
-            paid_with_cash = false;
-        if (confirmation == true) {
-            $.ajaxSetup({
-                beforeSend: function (xhr, settings) {
-                    xhr.setRequestHeader("X-CSRFToken", csrftoken)
-                }
-            });
-            $.ajax({
-                    type: 'POST',
-                    url: form.attr('data-send-url'),
-                    data: {
-                        "order_content": JSON.stringify(currOrder),
-                        "is_paid": JSON.stringify($('#is_paid').is(':checked')),
-                        "paid_with_cash": JSON.stringify($('#paid_with_cash').is(':checked')),
-                        "cook_choose": $('[name=cook_choose]:checked').val()
-                    },
-                    dataType: 'json',
-                    success: function (data) {
-                        alert('Заказ добавлен!');
-                        currOrder = [];
-                        DrawOrderTable();
-                        CalculateTotal();
+        if(currOrder.length>0) {
+            var confirmation = confirm("Подтвердить заказ?");
+            var form = $('.subm');
+            var is_paid = false;
+            if ($('#is_paid').is(':checked'))
+                is_paid = true;
+            var paid_with_cash = false;
+            if ($('#paid_with_cash').is(':checked'))
+                paid_with_cash = true;
+
+            if (confirmation == true) {
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken)
                     }
-                }
-            ).fail(function () {
-                alert('У вас нет права добавлять заказ!');
-            });
+                });
+                $.ajax({
+                        type: 'POST',
+                        url: form.attr('data-send-url'),
+                        data: {
+                            "order_content": JSON.stringify(currOrder),
+                            "is_paid": JSON.stringify($('#is_paid').is(':checked')),
+                            "paid_with_cash": JSON.stringify($('#paid_with_cash').is(':checked')),
+                            "cook_choose": $('[name=cook_choose]:checked').val()
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            if (is_paid && paid_with_cash)
+                            {
+                                var cash = prompt('Заказ №' + data.daily_number + ' добавлен!, Введите полученную сумму:', "");
+                                alert("Сдача: " + (parseInt(cash)-parseInt($('p.totalDisplay').text())))
+                            }
+                            else
+                            {
+                                alert('Заказ №' + data.daily_number + ' добавлен!');
+                            }
+                            currOrder = [];
+                            DrawOrderTable();
+                            CalculateTotal();
+                            $('#cook_auto').prop('checked', true);
+                            location.reload();
+                        }
+                    }
+                ).fail(function () {
+                    alert('У вас нет права добавлять заказ!');
+                });
+            }
+            else {
+                event.preventDefault();
+            }
         }
         else {
-            event.preventDefault();
+            alert("Пустой заказ!");
         }
     });
 });

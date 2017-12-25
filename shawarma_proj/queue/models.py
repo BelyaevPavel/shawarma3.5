@@ -57,6 +57,17 @@ class Menu(models.Model):
         return u"{}".format(self.title)
 
 
+class Servery(models.Model):
+    title = models.CharField(max_length=500, default="")
+    ip_address = models.CharField(max_length=500, default="")
+
+    def __str__(self):
+        return u"{}".format(self.title)
+
+    def __unicode__(self):
+        return u"{}".format(self.title)
+
+
 class Order(models.Model):
     daily_number = models.IntegerField(verbose_name="Daily Number", unique_for_date=True)
     open_time = models.DateTimeField(verbose_name="Open Time")
@@ -71,8 +82,12 @@ class Order(models.Model):
     prepared_by = models.ForeignKey(Staff, related_name="maker", default=None, null=True)
     printed = models.BooleanField(default=False, verbose_name="Check Printed")
     is_paid = models.BooleanField(default=False, verbose_name="Is Paid")
+    is_grilling = models.BooleanField(default=False, verbose_name="Is Grilling")
+    is_ready = models.BooleanField(default=False, verbose_name="Is Ready")
+    is_voiced = models.BooleanField(default=False, verbose_name="Is Voiced")
     # True - if paid with cash, False - if paid with card.
     paid_with_cash = models.BooleanField(default=True, verbose_name="Paid With Cash")
+    servery = models.ForeignKey(Servery, verbose_name="Servery")
 
     class Meta:
         permissions = (
@@ -92,6 +107,7 @@ class OrderContent(models.Model):
     is_canceled = models.BooleanField(verbose_name="Is canceled", default=False)
     canceled_by = models.ForeignKey(Staff, related_name="content_canceler", verbose_name="Canceled By", null=True)
     note = models.CharField(max_length=500, default="")
+    quantity = models.FloatField(verbose_name="Quantity", default=1.0, null=False)
 
     def __str__(self):
         return u"№{} {}".format(self.order, self.menu_item)
