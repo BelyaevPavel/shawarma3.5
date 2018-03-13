@@ -1,6 +1,8 @@
 {% load static %}
 <script type="text/javascript" src="{% static 'js/header_handlers.js' %}"></script>
 
+<input hidden id="header-urls" logout-url="{% url 'logout_link' %}">
+
 <div class="header-div-container fixed">
     <div class="header-div">
         {% if staff_category.title == 'Cashier' %}
@@ -23,6 +25,11 @@
                         Производство
                 </div>
             </a>
+            <a href="{% url 'order_history' %}">
+                <div class="header-buttons" id="order-history">
+                        История заказов
+                </div>
+            </a>
         {% endif %}
         {% if staff_category.title == 'Cook' %}
             <a href="{% url 'cook_interface' %}">
@@ -31,13 +38,18 @@
                 </div>
             </a>
         {% endif %}
+        {% if staff_category.title == 'Shashlychnik' %}
+            <a href="{% url 'shashlychnik_interface' %}">
+                <div class="header-buttons" id="shashlychnik_interface">
+                        Интерфейс Шашлычника
+                </div>
+            </a>
+        {% endif %}
         <div class="header-who-logged" id="header-who-logged">
             {{ user.first_name }} {{ user.last_name }}
         </div>
-        <a href="{% url 'logout_link' %}">
-            <div class="header-buttons" id="logout">
+            <div class="header-buttons" id="logout" onclick="logout()">
                     Выход
             </div>
-        </a>
     </div>
 </div>

@@ -16,3 +16,11 @@ function AdjustElements() {
     var buttons_width = (window_width - who_logged.width()) / header_buttons_count-10;
     header_buttons.width(buttons_width);
 }
+
+function logout() {
+    var url = $('#header-urls').attr('logout-url');
+    var confirmation = confirm("Выйти из системы?");
+    if (confirmation) {
+        location.href = url;
+    }
+}

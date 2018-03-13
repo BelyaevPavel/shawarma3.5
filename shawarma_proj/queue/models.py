@@ -19,7 +19,7 @@ class MenuCategory(models.Model):
 
 
 class StaffCategory(models.Model):
-    title = models.CharField(max_length=10)
+    title = models.CharField(max_length=20)
 
     def __str__(self):
         return u"{}".format(self.title)
@@ -73,6 +73,7 @@ class Order(models.Model):
     open_time = models.DateTimeField(verbose_name="Open Time")
     close_time = models.DateTimeField(verbose_name="Close Time", null=True)
     content_completed = models.BooleanField(verbose_name="Content Completed", default=False)
+    shashlyk_completed = models.BooleanField(verbose_name="Shashlyk Completed", default=False)
     supplement_completed = models.BooleanField(verbose_name="Supplement Completed", default=False)
     total = models.FloatField(default=0, validators=[MinValueValidator(0, "Total can't be negative!")])
     is_canceled = models.BooleanField(verbose_name="Is canceled", default=False)
@@ -83,6 +84,7 @@ class Order(models.Model):
     printed = models.BooleanField(default=False, verbose_name="Check Printed")
     is_paid = models.BooleanField(default=False, verbose_name="Is Paid")
     is_grilling = models.BooleanField(default=False, verbose_name="Is Grilling")
+    is_grilling_shash = models.BooleanField(default=False, verbose_name="Shashlyk Is Grilling")
     is_ready = models.BooleanField(default=False, verbose_name="Is Ready")
     is_voiced = models.BooleanField(default=False, verbose_name="Is Voiced")
     # True - if paid with cash, False - if paid with card.
@@ -120,3 +122,23 @@ class OrderContent(models.Model):
             ('can_cancel', 'User can cancel order content.'),
             ('can_cook', 'User can cook order content'),
         )
+
+
+class OrderOpinion(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, blank=True, null=True)
+    mark = models.IntegerField(default=0)
+    note = models.TextField(max_length=1000, blank=True, null=True)
+    post_time = models.DateTimeField(verbose_name="Post Time", null=True)
+
+    def __str__(self):
+        return u"№{} {}".format(self.order, self.mark)
+
+    def __unicode__(self):
+        return u"№{} {}".format(self.order, self.mark)
+
+
+class PauseTracker(models.Model):
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
+    start_timestamp = models.DateTimeField(verbose_name="Start Timestamp", null=True)
+    end_timestamp = models.DateTimeField(verbose_name="End Timestamp", null=True)
+

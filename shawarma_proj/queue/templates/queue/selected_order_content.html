@@ -18,7 +18,7 @@
                         ItemToGrill({{ content_item.item.id }})
                     {% endif %}
                 {% endif %}">
-            №{{ content_item.number }} {{ content_item.item.menu_item.title }} <span class="cook-item-comment">{{ content_item.item.note }}</span>
+            №{{ content_item.number }} {{ content_item.item.menu_item.title }} <p style="margin: 0px"><span class="cook-item-comment">{{ content_item.item.note }}</span></p>
         </div>
     </div>
 {% empty %}
@@ -26,17 +26,34 @@
         Нет заказов.
     </div>
 {% endfor %}
-{% if order_content and not selected_order.content_completed %}
-    <div class="cook-complite-all-button" onclick="
-            {% if selected_order.is_grilling %}
-                FinishAllContent({{ selected_order.id }})
-            {% else %}
-                GrillAllContent({{ selected_order.id }})
-            {% endif %}">
-            {% if selected_order.is_grilling %}
-                Завершить всё
-            {% else %}
-                Жарить всё
-            {% endif %}
-    </div>
- {% endif %}
+{% if staff_category.title == 'Shashlychnik' %}
+    {% if order_content and not selected_order.shashlyk_completed %}
+        <div class="cook-complete-all-button" onclick="
+                {% if selected_order.is_grilling_shash %}
+                    FinishAllContent({{ selected_order.id }})
+                {% else %}
+                    GrillAllContent({{ selected_order.id }})
+                {% endif %}">
+                {% if selected_order.is_grilling_shash %}
+                    Завершить всё
+                {% else %}
+                    Жарить всё
+                {% endif %}
+        </div>
+     {% endif %}
+{% elif staff_category.title == 'Cook' %}
+    {% if order_content and not selected_order.content_completed %}
+        <div class="cook-complete-all-button" onclick="
+                {% if selected_order.is_grilling %}
+                    FinishAllContent({{ selected_order.id }})
+                {% else %}
+                    GrillAllContent({{ selected_order.id }})
+                {% endif %}">
+                {% if selected_order.is_grilling %}
+                    Завершить всё
+                {% else %}
+                    Жарить всё
+                {% endif %}
+        </div>
+     {% endif %}
+{% endif %}

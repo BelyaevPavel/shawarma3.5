@@ -2,8 +2,8 @@
  * Created by paul on 10.07.17.
  */
 $(document).ready( function () {
-    $('#current-queue').addClass('header-active');
-    refresher();
+    $('#order-history').addClass('header-active');
+    // refresher();
 }
 );
 

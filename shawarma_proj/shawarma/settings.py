@@ -11,8 +11,9 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import raven
 import psycopg2.extensions
-from my_settings import login, password, db_name, allowed_hosts, debug_flag, listner_url, listner_port, printer_url
+from my_settings import login, password, db_name, allowed_hosts, debug_flag, listner_url, listner_port, printer_url, raven_dsn
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +34,7 @@ ALLOWED_HOSTS = allowed_hosts
 # Application definition
 
 INSTALLED_APPS = [
+    'raven.contrib.django.raven_compat',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -74,6 +76,93 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'shawarma.wsgi.application'
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'root': {
+        'level': 'WARNING',
+        'handlers': ['sentry'],
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s \n'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'sentry': {
+            'level': 'ERROR',
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+            'tags': {'custom-tag': 'x'},
+        },
+        'file_general': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug.log',
+            'formatter': 'verbose'
+        },
+        'file_request': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug_request.log',
+            'formatter': 'verbose'
+        },
+        'file_server': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug_server.log',
+            'formatter': 'verbose'
+        },
+        'file_template': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug_template.log',
+            'formatter': 'verbose'
+        },
+        'file_db': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'log/debug_db.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file_general'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['file_request'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.server': {
+            'handlers': ['file_server'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.template': {
+            'handlers': ['file_template'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.db.backends': {
+            'handlers': ['file_db'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'sentry.errors': {
+            'level': 'DEBUG',
+            'handlers': ['file_general'],
+            'propagate': False,
+        }
+    },
+}
 
 
 # Database
@@ -125,7 +214,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -142,3 +231,11 @@ PRINTER_URL = printer_url
 LOGIN_REDIRECT_URL = '/queue/'
 
 STATIC_ROOT = '/home/admintrud/shawarma/shawarma_rep/static_content/static/'
+
+
+RAVEN_CONFIG = {
+    'dsn': raven_dsn,
+    # If you are using git, you can also automatically configure the
+    # release based on the git info.
+    'release': raven.fetch_git_sha(os.path.abspath(os.pardir)),
+}

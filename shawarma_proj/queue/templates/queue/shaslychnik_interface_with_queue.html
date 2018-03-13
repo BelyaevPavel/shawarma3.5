@@ -6,8 +6,8 @@
 {% block content %}
     <input hidden id="urls" data-take-url="{% url 'take' %}" data-grill-url="{% url 'to_grill' %}"
            data-finish-url="{% url 'finish_cooking' %}" data-grill-timer-url="{% url 'grill_timer' %}"
-           data-next-url="{% url 'next_to_prepare' %}" data-ajax="{% url 'cook_interface_ajax' %}"
-           data-finish-all-content-url="{% url 'finish_all_content' %}" data-select-url="{% url 'select_order' %}"
+           data-next-url="{% url 'next_to_prepare' %}" data-ajax="{% url 'shashlychnik_interface_ajax' %}"
+           data-finish-all-content-url="{% url 'finish_all_content' %}" data-select-url="{% url 'select_order_shashlychnik' %}"
            data-grill-all-content-url="{% url 'grill_all_content' %}" pause-url="{% url 'cook_pause' %}">
     <div class="cook-pause-button {% if not staff.available %}
         header-active

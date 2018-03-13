@@ -8,9 +8,26 @@
     <div class="menu-div">
         {% include 'queue/menu.html' with menu_items=menu_items %}
     </div>
+    <input hidden id="urls" data-search-comment="{% url 'search_comment' %}">
     <div class="order-div">
         <table class="currentOrderTable">
-            <thead>Содержание заказа</thead>
+            <thead>Содержание заказа
+            <tr>
+                <td class="currentOrderTotalText">
+                    <div>
+                        Итого
+                    </div>
+                </td>
+                <td class="currentOrderTotalFig">
+                    <div>
+                        <p class="totalDisplay">
+
+                        </p>
+                    </div>
+                </td>
+            </tr>
+            </thead>
+
             <tbody></tbody>
             <tfoot>
             <tr>

@@ -3,20 +3,26 @@ from __future__ import unicode_literals
 
 from django.http.response import HttpResponseRedirect
 
-from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent, Servery
+from .models import Menu, Order, Staff, StaffCategory, MenuCategory, OrderContent, Servery, OrderOpinion, PauseTracker
 from django.template import loader
+from django.core.exceptions import EmptyResultSet, MultipleObjectsReturned, PermissionDenied, ObjectDoesNotExist
+from requests.exceptions import ConnectionError, ConnectTimeout, Timeout
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import logout, login, views as auth_views
-from django.db.models import Max, Count, Avg, F
+from django.db.models import Max, Min, Count, Avg, F
 from hashlib import md5
 from shawarma.settings import TIME_ZONE, LISTNER_URL, LISTNER_PORT, PRINTER_URL
+from raven.contrib.django.raven_compat.models import client
 import requests
 import datetime
+import logging
 import json
 import os
 import subprocess
+
+logger = logging.getLogger(__name__)
 
 
 @login_required()
@@ -30,9 +36,70 @@ def redirection(request):
         return HttpResponseRedirect('current_queue')
 
 
+def cook_pause(request):
+    user = request.user
+    try:
+        staff = Staff.objects.get(user=user)
+    except MultipleObjectsReturned:
+        data = {
+            'success': False,
+            'message': 'Множество экземпляров персонала возвращено!'
+        }
+        logger.error(u'{} Множество экземпляров персонала возвращено!'.format(user))
+        client.captureException()
+        return JsonResponse(data)
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске персонала!'
+        }
+        logger.error(u'{} Что-то пошло не так при поиске персонала!'.format(user))
+        return JsonResponse(data)
+    if staff.available:
+        pause = PauseTracker(staff=staff, start_timestamp=datetime.datetime.now())
+        pause.save()
+        staff.available = False
+        staff.save()
+    else:
+        try:
+            last_pause = PauseTracker.objects.filter(staff=staff,
+                                                     start_timestamp__contains=datetime.date.today()).order_by(
+                'start_timestamp')
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске последней паузы!'
+            }
+            return JsonResponse(data)
+        if len(last_pause) > 0:
+            last_pause = last_pause[len(last_pause) - 1]
+            last_pause.end_timestamp = datetime.datetime.now()
+            last_pause.save()
+
+        staff.available = True
+        staff.save()
+
+    data = {
+        'success': True
+    }
+    if staff.staff_category.title == 'Cook':
+        return cook_interface(request)
+
+    if staff.staff_category.title == 'Shashlychnik':
+        return shashlychnik_interface(request)
+
+
 def logout_view(request):
     user = request.user
-    staff = Staff.objects.get(user=user)
+    try:
+        staff = Staff.objects.get(user=user)
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске пользователя!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     if staff.available:
         staff.available = False
         staff.save()
@@ -44,33 +111,169 @@ def logout_view(request):
 @login_required()
 def welcomer(request):
     template = loader.get_template('queue/welcomer.html')
-    context = {
-        'staff_category': StaffCategory.objects.get(staff__user=request.user),
-    }
+    try:
+        context = {
+            'staff_category': StaffCategory.objects.get(staff__user=request.user),
+        }
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске категории персонала!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     return HttpResponse(template.render(context, request))
 
 
 @login_required()
 def menu(request):
-    menu_items = Menu.objects.order_by('title')
+    try:
+        menu_items = Menu.objects.order_by('title')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске последней паузы!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     template = loader.get_template('queue/menu_page.html')
+    try:
+        context = {
+            'user': request.user,
+            'available_cookers': Staff.objects.filter(available=True, staff_category__title__iexact='Cook'),
+            'staff_category': StaffCategory.objects.get(staff__user=request.user),
+            'menu_items': menu_items,
+            'menu_categories': MenuCategory.objects.order_by('weight')
+        }
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске последней паузы!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    return HttpResponse(template.render(context, request))
+
+
+def search_comment(request):
+    content_id = request.POST.get('id', '')
+    comment_part = request.POST.get('note', '')
+    data = {
+        'html': ''
+    }
+    if len(comment_part) > 0:
+        try:
+            comments = OrderContent.objects.filter(note__icontains=comment_part).distinct('note')[:5]
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске комментариев!'
+            }
+            client.captureException()
+            return JsonResponse(data)
+        context = {
+            'id': content_id,
+            'comments': comments
+        }
+        template = loader.get_template('queue/suggestion_list.html')
+        data['html'] = template.render(context, request)
+    return JsonResponse(data)
+
+
+def evaluation(request):
+    template = loader.get_template('queue/evaluation_page.html')
     context = {
-        'user': request.user,
-        'available_cookers': Staff.objects.filter(user__last_login__contains=datetime.date.today(), available=True,
-                                                  staff_category__title__iexact='Cook'),
-        'staff_category': StaffCategory.objects.get(staff__user=request.user),
-        'menu_items': menu_items,
-        'menu_categories': MenuCategory.objects.order_by('weight')
+
     }
     return HttpResponse(template.render(context, request))
 
 
+def evaluate(request):
+    daily_number = request.POST.get('daily_number', None)
+    mark = request.POST.get('mark', None)
+    note = request.POST.get('note', '')
+    try:
+        if daily_number:
+            daily_number = int(daily_number)
+            try:
+                current_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
+                    Max('daily_number'))
+            except:
+                data = {
+                    'success': False,
+                    'message': 'Что-то пошло не так при поиске номера заказов!'
+                }
+                client.captureException()
+                return JsonResponse(data)
+            current_daily_number = current_daily_number['daily_number__max']
+            hundreds = current_daily_number // 100
+            if daily_number + hundreds * 100 <= current_daily_number:
+                if hundreds * 100 <= daily_number + hundreds * 100:
+                    try:
+                        order = Order.objects.get(open_time__contains=datetime.date.today(),
+                                                  daily_number=daily_number + hundreds * 100)
+                    except:
+                        data = {
+                            'success': False,
+                            'message': 'Что-то пошло не так при поиске заказа!'
+                        }
+                        client.captureException()
+                        return JsonResponse(data)
+                    order_opinion = OrderOpinion(note=note, mark=int(mark), order=order,
+                                                 post_time=datetime.datetime.now())
+                    order_opinion.save()
+                else:
+                    try:
+                        order = Order.objects.get(open_time__contains=datetime.date.today(),
+                                                  daily_number=daily_number + (hundreds - 1) * 100)
+                    except:
+                        data = {
+                            'success': False,
+                            'message': 'Что-то пошло не так при поиске заказа!'
+                        }
+                        client.captureException()
+                        return JsonResponse(data)
+                    order_opinion = OrderOpinion(note=note, mark=int(mark), order=order,
+                                                 post_time=datetime.datetime.now())
+                    order_opinion.save()
+        else:
+            order_opinion = OrderOpinion(note=note, mark=int(mark), post_time=datetime.datetime.now())
+            order_opinion.save()
+
+        data = {
+            'success': True
+        }
+        return JsonResponse(data)
+    except:
+        data = {
+            'success': False
+        }
+        client.captureException()
+        return JsonResponse(data)
+
+
 def buyer_queue(request):
-    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       is_canceled=False, is_ready=False).order_by('open_time')
-    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True, is_ready=True,
-                                        is_canceled=False).order_by('open_time')
+    try:
+        open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                           is_canceled=False, is_ready=False).order_by('open_time')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске открытых заказов!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    try:
+        ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                            content_completed=True, supplement_completed=True, is_ready=True,
+                                            is_canceled=False).order_by('open_time')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске готовых заказов!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     context = {
         'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in open_orders],
         'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in
@@ -85,11 +288,27 @@ def buyer_queue(request):
 
 
 def buyer_queue_ajax(request):
-    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       is_canceled=False, is_ready=False).order_by('open_time')
-    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        content_completed=True, supplement_completed=True, is_ready=True,
-                                        is_canceled=False).order_by('open_time')
+    try:
+        open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                           is_canceled=False, is_ready=False).order_by('open_time')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске открытых заказов!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    try:
+        ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                            content_completed=True, supplement_completed=True, is_ready=True,
+                                            is_canceled=False).order_by('open_time')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске готовых заказов!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     context = {
         'open_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in open_orders],
         'ready_orders': [{'servery': order.servery, 'daily_number': order.daily_number} for order in
@@ -102,19 +321,38 @@ def buyer_queue_ajax(request):
     template = loader.get_template('queue/buyer_queue_ajax.html')
     data = {
         'html': template.render(context, request),
-        'ready': json.dumps([order.daily_number for order in ready_orders]),
-        'voiced': json.dumps([order.is_voiced for order in ready_orders])
+        'ready': json.dumps([order.daily_number for order in ready_orders.filter(is_voiced=False)]),
+        'voiced': json.dumps([order.is_voiced for order in ready_orders.filter(is_voiced=False)])
     }
+    # for order in ready_orders:
+    #     order.is_voiced = True
+    #     order.save()
     return JsonResponse(data)
 
 
 @login_required()
 def current_queue(request):
-    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       is_canceled=False, is_ready=False).order_by('open_time')
-    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        is_canceled=False, content_completed=True, supplement_completed=True,
-                                        is_ready=True).order_by('open_time')
+    try:
+        open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                           is_canceled=False, is_ready=False).order_by('open_time')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске открытых заказов!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    try:
+        ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                            is_canceled=False, content_completed=True, shashlyk_completed=True,
+                                            supplement_completed=True, is_ready=True).order_by('open_time')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске готовых заказов!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     # print open_orders
     # print ready_orders
 
@@ -127,6 +365,11 @@ def current_queue(request):
                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
                          'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                         'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                         'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                             menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
                          'operator_part': OrderContent.objects.filter(order=open_order).filter(
                              menu_item__can_be_prepared_by__title__iexact='operator')
                          } for open_order in open_orders],
@@ -136,6 +379,11 @@ def current_queue(request):
                               finish_timestamp__isnull=False).aggregate(count=Count('id')),
                           'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                          'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                          'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                              menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(count=Count('id')),
                           'operator_part': OrderContent.objects.filter(order=open_order).filter(
                               menu_item__can_be_prepared_by__title__iexact='operator')
                           } for open_order in ready_orders],
@@ -148,38 +396,117 @@ def current_queue(request):
 
 
 @login_required()
+def order_history(request):
+    try:
+        open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=False,
+                                           is_canceled=False, is_ready=True).order_by('open_time')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске последней паузы!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    # print open_orders
+    # print ready_orders
+
+    template = loader.get_template('queue/order_history.html')
+    try:
+        context = {
+            'open_orders': [{'order': open_order,
+                             'printed': open_order.printed,
+                             'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                                 menu_item__can_be_prepared_by__title__iexact='cook').filter(
+                                 finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                             'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
+                                 menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                             'operator_part': OrderContent.objects.filter(order=open_order).filter(
+                                 menu_item__can_be_prepared_by__title__iexact='operator')
+                             } for open_order in open_orders],
+            'open_length': len(open_orders),
+            'staff_category': StaffCategory.objects.get(staff__user=request.user),
+        }
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при подготовке шаблона!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    # print context
+    return HttpResponse(template.render(context, request))
+
+
+@login_required()
 def current_queue_ajax(request):
-    open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                       is_canceled=False, is_ready=False).order_by('open_time')
-    ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        is_canceled=False, content_completed=True, supplement_completed=True,
-                                        is_ready=True).order_by('open_time')
+    try:
+        open_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                           is_canceled=False, is_ready=False).order_by('open_time')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске последней паузы!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+
+    try:
+        ready_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                            is_canceled=False, content_completed=True, shashlyk_completed=True,
+                                            supplement_completed=True, is_ready=True).order_by('open_time')
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске последней паузы!'
+        }
+        client.captureException()
+        return JsonResponse(data)
 
     template = loader.get_template('queue/current_queue_grid_ajax.html')
-    context = {
-        'open_orders': [{'order': open_order,
-                         'printed': open_order.printed,
-                         'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
-                             menu_item__can_be_prepared_by__title__iexact='cook').filter(
-                             finish_timestamp__isnull=False).aggregate(count=Count('id')),
-                         'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
-                             menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
-                         'operator_part': OrderContent.objects.filter(order=open_order).filter(
-                             menu_item__can_be_prepared_by__title__iexact='operator')
-                         } for open_order in open_orders],
-        'ready_orders': [{'order': open_order,
-                          'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
-                              menu_item__can_be_prepared_by__title__iexact='cook').filter(
-                              finish_timestamp__isnull=False).aggregate(count=Count('id')),
-                          'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
-                              menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
-                          'operator_part': OrderContent.objects.filter(order=open_order).filter(
-                              menu_item__can_be_prepared_by__title__iexact='operator')
-                          } for open_order in ready_orders],
-        'open_length': len(open_orders),
-        'ready_length': len(ready_orders),
-        'staff_category': StaffCategory.objects.get(staff__user=request.user),
-    }
+    try:
+        context = {
+            'open_orders': [{'order': open_order,
+                             'printed': open_order.printed,
+                             'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                                 menu_item__can_be_prepared_by__title__iexact='cook').filter(
+                                 finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                             'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
+                                 menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                             'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                                 menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                                 finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                             'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                                 menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(
+                                 count=Count('id')),
+                             'operator_part': OrderContent.objects.filter(order=open_order).filter(
+                                 menu_item__can_be_prepared_by__title__iexact='operator')
+                             } for open_order in open_orders],
+            'ready_orders': [{'order': open_order,
+                              'cook_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                                  menu_item__can_be_prepared_by__title__iexact='cook').filter(
+                                  finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                              'cook_part_count': OrderContent.objects.filter(order=open_order).filter(
+                                  menu_item__can_be_prepared_by__title__iexact='cook').aggregate(count=Count('id')),
+                              'shashlychnik_part_ready_count': OrderContent.objects.filter(order=open_order).filter(
+                                  menu_item__can_be_prepared_by__title__iexact='shashlychnik').filter(
+                                  finish_timestamp__isnull=False).aggregate(count=Count('id')),
+                              'shashlychnik_part_count': OrderContent.objects.filter(order=open_order).filter(
+                                  menu_item__can_be_prepared_by__title__iexact='shashlychnik').aggregate(
+                                  count=Count('id')),
+                              'operator_part': OrderContent.objects.filter(order=open_order).filter(
+                                  menu_item__can_be_prepared_by__title__iexact='operator')
+                              } for open_order in ready_orders],
+            'open_length': len(open_orders),
+            'ready_length': len(ready_orders),
+            'staff_category': StaffCategory.objects.get(staff__user=request.user),
+        }
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске последней паузы!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     data = {
         'html': template.render(context, request)
     }
@@ -376,9 +703,9 @@ def cook_interface(request):
     def new_processor_with_queue(request):
         user = request.user
         staff = Staff.objects.get(user=user)
-        if not staff.available:
-            staff.available = True
-            staff.save()
+        # if not staff.available:
+        #     staff.available = True
+        #     staff.save()
         context = None
         taken_order_content = None
         new_order = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
@@ -397,42 +724,6 @@ def cook_interface(request):
             if len(taken_order_content) > 0:
                 has_order = True
 
-        # if not has_order:
-        #     free_orders = Order.objects.filter(prepared_by__isnull=True, is_canceled=False,
-        #                                        open_time__contains=datetime.date.today()).order_by('open_time')
-        #
-        #     for free_order in free_orders:
-        #         taken_order_content = OrderContent.objects.filter(order=free_order,
-        #                                                           menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
-        #             'id')
-        #         taken_order_in_grill_content = OrderContent.objects.filter(order=free_order,
-        #                                                                    grill_timestamp__isnull=False,
-        #                                                                    menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
-        #             'id')
-        #         # ALERT! Only SuperGuy can handle this amount of shawarma!!!
-        #         if len(taken_order_content) > 6:
-        #             if staff.super_guy:
-        #                 free_order.prepared_by = staff
-        #             else:
-        #                 continue
-        #         else:
-        #             free_order.prepared_by = staff
-        #
-        #         if free_order.prepared_by == staff:
-        #             free_order.save()
-        #             # print "Free orders prepared_by: {}".format(free_order.prepared_by)
-        #             context = {
-        #                 'free_order': free_order,
-        #                 'order_content': [{'number': number,
-        #                                    'item': item} for number, item in enumerate(taken_order_content, start=1)],
-        #                 'in_grill_content': [{'number': number,
-        #                                       'item': item} for number, item in
-        #                                      enumerate(taken_order_in_grill_content, start=1)],
-        #                 'staff_category': staff
-        #             }
-        #
-        #         break
-        # else:
         taken_order_content = OrderContent.objects.filter(order=new_order,
                                                           menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
             'id')
@@ -452,10 +743,12 @@ def cook_interface(request):
                                                                                     menu_item__can_be_prepared_by__title__iexact='cook'))}
                              for cooks_order in other_orders if len(OrderContent.objects.filter(order=cooks_order,
                                                                                                 menu_item__can_be_prepared_by__title__iexact='cook')) > 0],
-            'staff_category': staff
+            'staff_category': staff.staff_category,
+            'staff': staff
         }
 
         template = loader.get_template('queue/cook_interface_with_queue.html')
+        aux_html = template.render(context, request)
         return HttpResponse(template.render(context, request))
 
     return new_processor_with_queue(request)
@@ -466,9 +759,9 @@ def c_i_a(request):
     def new_processor(request):
         user = request.user
         staff = Staff.objects.get(user=user)
-        if not staff.available:
-            staff.available = True
-            staff.save()
+        # if not staff.available:
+        #     staff.available = True
+        #     staff.save()
         # print u"AJAX from {}".format(user)
         context = None
         taken_order_content = None
@@ -534,37 +827,199 @@ def c_i_a(request):
 
     def queue_processor(request):
         user = request.user
-        staff = Staff.objects.get(user=user)
-        if not staff.available:
-            staff.available = True
-            staff.save()
+        try:
+            staff = Staff.objects.get(user=user)
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске пользователя!'
+            }
+            client.captureException()
+            return JsonResponse(data)
+        # if not staff.available:
+        #     staff.available = True
+        #     staff.save()
         context = None
         taken_order_content = None
-        new_order = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
-                                         open_time__contains=datetime.date.today(), is_canceled=False,
-                                         content_completed=False, is_grilling=False,
-                                         close_time__isnull=True).order_by('open_time')
+        other_orders = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
+                                            open_time__contains=datetime.date.today(), is_canceled=False,
+                                            close_time__isnull=True).order_by('open_time')
+        try:
+            new_order = Order.objects.filter(prepared_by=staff, open_time__isnull=False,
+                                             open_time__contains=datetime.date.today(), is_canceled=False,
+                                             content_completed=False, is_grilling=False,
+                                             close_time__isnull=True).order_by('open_time')
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске заказа!'
+            }
+            client.captureException()
+            return JsonResponse(data)
+
         has_order = False
         if len(new_order) > 0:
             new_order = new_order[0]
-            taken_order_content = OrderContent.objects.filter(order=new_order,
-                                                              menu_item__can_be_prepared_by__title__iexact='Cook',
-                                                              finish_timestamp__isnull=True).order_by('id')
+            try:
+                taken_order_content = OrderContent.objects.filter(order=new_order,
+                                                                  menu_item__can_be_prepared_by__title__iexact='Cook',
+                                                                  finish_timestamp__isnull=True).order_by('id')
+            except:
+                data = {
+                    'success': False,
+                    'message': 'Что-то пошло не так при поиске продуктов!'
+                }
+                client.captureException()
+                return JsonResponse(data)
             if len(taken_order_content) > 0:
                 has_order = True
 
-        taken_order_content = OrderContent.objects.filter(order=new_order,
-                                                          menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
-            'id')
-        taken_order_in_grill_content = OrderContent.objects.filter(order=new_order,
-                                                                   grill_timestamp__isnull=False,
-                                                                   menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
-            'id')
+        try:
+            taken_order_content = OrderContent.objects.filter(order=new_order,
+                                                              menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                'id')
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске продуктов!'
+            }
+            client.captureException()
+            return JsonResponse(data)
+        try:
+            taken_order_in_grill_content = OrderContent.objects.filter(order=new_order,
+                                                                       grill_timestamp__isnull=False,
+                                                                       menu_item__can_be_prepared_by__title__iexact='Cook').order_by(
+                'id')
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске продуктов!'
+            }
+            client.captureException()
+            return JsonResponse(data)
         context = {
             'selected_order': new_order,
             'order_content': [{'number': number,
                                'item': item} for number, item in enumerate(taken_order_content, start=1)],
-            'staff_category': staff
+            'staff_category': staff.staff_category,
+            'staff': staff
+        }
+        template = loader.get_template('queue/selected_order_content.html')
+        context_other = {
+            'cooks_orders': [{'order': cooks_order,
+                              'cook_content_count': len(OrderContent.objects.filter(order=cooks_order,
+                                                                                    menu_item__can_be_prepared_by__title__iexact='cook'))}
+                             for cooks_order in other_orders if len(OrderContent.objects.filter(order=cooks_order,
+                                                                                                menu_item__can_be_prepared_by__title__iexact='cook')) > 0]
+        }
+        template_other = loader.get_template('queue/cooks_order_queue.html')
+        data = {
+            'success': True,
+            'html': template.render(context, request),
+            'html_other': template_other.render(context_other, request)
+        }
+
+        return JsonResponse(data=data)
+
+    return queue_processor(request)
+
+
+@login_required()
+def shashlychnik_interface(request):
+    def new_processor_with_queue(request):
+        user = request.user
+        staff = Staff.objects.get(user=user)
+        # if not staff.available:
+        #     staff.available = True
+        #     staff.save()
+        context = None
+        taken_order_content = None
+        new_orders = Order.objects.filter(open_time__isnull=False,
+                                          open_time__contains=datetime.date.today(), is_canceled=False,
+                                          shashlyk_completed=False, is_grilling_shash=False,
+                                          close_time__isnull=True).order_by('open_time')
+        other_orders = Order.objects.filter(open_time__isnull=False,
+                                            open_time__contains=datetime.date.today(), is_canceled=False,
+                                            close_time__isnull=True).order_by('open_time')
+        has_order = False
+        selected_order = None
+        for order in new_orders:
+            taken_order_content = OrderContent.objects.filter(order=order,
+                                                              menu_item__can_be_prepared_by__title__iexact='Shashlychnik',
+                                                              finish_timestamp__isnull=True).order_by('id')
+            if len(taken_order_content) > 0:
+                has_order = True
+                selected_order = order
+                break
+
+        taken_order_content = OrderContent.objects.filter(order=selected_order,
+                                                          menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
+            'id')
+        taken_order_in_grill_content = OrderContent.objects.filter(order=selected_order,
+                                                                   grill_timestamp__isnull=False,
+                                                                   menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
+            'id')
+        context = {
+            'selected_order': selected_order,
+            'order_content': [{'number': number,
+                               'item': item} for number, item in enumerate(taken_order_content, start=1)],
+            'in_grill_content': [{'number': number,
+                                  'item': item} for number, item in
+                                 enumerate(taken_order_in_grill_content, start=1)],
+            'cooks_orders': [{'order': cooks_order,
+                              'cook_content_count': len(OrderContent.objects.filter(order=cooks_order,
+                                                                                    menu_item__can_be_prepared_by__title__iexact='Shashlychnik'))}
+                             for cooks_order in other_orders if len(OrderContent.objects.filter(order=cooks_order,
+                                                                                                menu_item__can_be_prepared_by__title__iexact='Shashlychnik')) > 0],
+            'staff_category': staff.staff_category,
+            'staff': staff
+        }
+
+        template = loader.get_template('queue/shaslychnik_interface_with_queue.html')
+        aux_html = template.render(context, request)
+        return HttpResponse(template.render(context, request))
+
+    return new_processor_with_queue(request)
+
+
+@login_required()
+def s_i_a(request):
+    def queue_processor(request):
+        user = request.user
+        staff = Staff.objects.get(user=user)
+        # if not staff.available:
+        #     staff.available = True
+        #     staff.save()
+        context = None
+        taken_order_content = None
+        new_order = Order.objects.filter(open_time__isnull=False,
+                                         open_time__contains=datetime.date.today(), is_canceled=False,
+                                         shashlyk_completed=False, is_grilling_shash=False,
+                                         close_time__isnull=True).order_by('open_time')
+        has_order = False
+        selected_order = None
+        for order in new_order:
+            taken_order_content = OrderContent.objects.filter(order=order,
+                                                              menu_item__can_be_prepared_by__title__iexact='Shashlychnik',
+                                                              finish_timestamp__isnull=True).order_by('id')
+            if len(taken_order_content) > 0:
+                has_order = True
+                selected_order = order
+                break
+
+        taken_order_content = OrderContent.objects.filter(order=selected_order,
+                                                          menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
+            'id')
+        taken_order_in_grill_content = OrderContent.objects.filter(order=selected_order,
+                                                                   grill_timestamp__isnull=False,
+                                                                   menu_item__can_be_prepared_by__title__iexact='Shashlychnik').order_by(
+            'id')
+        context = {
+            'selected_order': selected_order,
+            'order_content': [{'number': number,
+                               'item': item} for number, item in enumerate(taken_order_content, start=1)],
+            'staff_category': staff.staff_category,
+            'staff': staff
         }
         template = loader.get_template('queue/selected_order_content.html')
         data = {
@@ -580,8 +1035,24 @@ def c_i_a(request):
 @login_required()
 @permission_required('queue.change_order')
 def set_cooker(request, order_id, cooker_id):
-    order = Order.objects.get_object_or_404(id=order_id)
-    cooker = Staff.objects.get_object_or_404(id=cooker_id)
+    try:
+        order = Order.objects.get_object_or_404(id=order_id)
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске заказа!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    try:
+        cooker = Staff.objects.get_object_or_404(id=cooker_id)
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске повара!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     order.prepared_by = cooker
 
     return JsonResponse(data={'success': True})
@@ -634,7 +1105,11 @@ def print_order(request, order_id):
 
 
 def voice_order(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    try:
+        order = Order.objects.get(id=order_id)
+    except:
+        client.captureException()
+        return HttpResponse()
     order.is_voiced = False
     order.save()
 
@@ -647,7 +1122,15 @@ def unvoice_order(request):
         'success': False
     }
     if daily_number:
-        order = get_object_or_404(Order, daily_number=daily_number, open_time__contains=datetime.date.today())
+        try:
+            order = Order.objects.get(daily_number=daily_number, open_time__contains=datetime.date.today())
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске заказа!'
+            }
+            client.captureException()
+            return JsonResponse(data)
         order.is_voiced = True
         order.save()
         data = {
@@ -658,6 +1141,50 @@ def unvoice_order(request):
 
 
 def select_order(request):
+    user = request.user
+    try:
+        staff = Staff.objects.get(user=user)
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске персонала!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    order_id = request.POST.get('order_id', None)
+    data = {
+        'success': False
+    }
+    if order_id:
+        try:
+            context = {
+                'selected_order': get_object_or_404(Order, id=order_id),
+                'order_content': [{'number': number,
+                                   'item': item} for number, item in
+                                  enumerate(OrderContent.objects.filter(order__id=order_id,
+                                                                        menu_item__can_be_prepared_by__title__iexact='Cook'),
+                                            start=1)],
+                'staff_category': staff.staff_category
+            }
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске последней паузы!'
+            }
+            client.captureException()
+            return JsonResponse(data)
+        template = loader.get_template('queue/selected_order_content.html')
+        data = {
+            'success': True,
+            'html': template.render(context, request)
+        }
+
+    return JsonResponse(data=data)
+
+
+def shashlychnik_select_order(request):
+    user = request.user
+    staff = Staff.objects.get(user=user)
     order_id = request.POST.get('order_id', None)
     data = {
         'success': False
@@ -668,8 +1195,9 @@ def select_order(request):
             'order_content': [{'number': number,
                                'item': item} for number, item in
                               enumerate(OrderContent.objects.filter(order__id=order_id,
-                                                                    menu_item__can_be_prepared_by__title__iexact='Cook'),
-                                        start=1)]
+                                                                    menu_item__can_be_prepared_by__title__iexact='Shashlychnik'),
+                                        start=1)],
+            'staff_category': staff.staff_category
         }
         template = loader.get_template('queue/selected_order_content.html')
         data = {
@@ -681,8 +1209,16 @@ def select_order(request):
 
 
 def voice_all(request):
-    today_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
-                                        is_ready=True)
+    try:
+        today_orders = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=True,
+                                            is_ready=True)
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске заказов!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     for order in today_orders:
         order.is_voiced = False
         order.save()
@@ -699,25 +1235,77 @@ def make_order(request):
     is_paid = json.loads(request.POST['is_paid'])
     paid_with_cash = json.loads(request.POST['paid_with_cash'])
     cook_choose = request.POST['cook_choose']
-    servery = Servery.objects.get(ip_address=servery_ip)
+
+    if len(content) == 0:
+        data = {
+            'success': False,
+            'message': 'Order is empty!'
+        }
+        return JsonResponse(data)
+
+    try:
+        servery = Servery.objects.get(ip_address=servery_ip)
+    except MultipleObjectsReturned:
+        data = {
+            'success': False,
+            'message': 'Multiple serveries returned!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    except:
+        data = {
+            'success': False,
+            'message': 'Something wrong happened while getting servery!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+
     order_next_number = 0
-    order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
-        Max('daily_number'))
+    try:
+        order_last_daily_number = Order.objects.filter(open_time__contains=datetime.date.today()).aggregate(
+            Max('daily_number'))
+    except EmptyResultSet:
+        data = {
+            'success': False,
+            'message': 'Empty set of orders returned!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    except:
+        data = {
+            'success': False,
+            'message': 'Something wrong happened while getting set of orders!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+
     if order_last_daily_number:
         if order_last_daily_number['daily_number__max'] is not None:
             order_next_number = order_last_daily_number['daily_number__max'] + 1
         else:
             order_next_number = 1
 
-            # if order_next_number % 100 == 0:
-            # order_next_number += 1
+    try:
+        order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number, is_paid=is_paid,
+                      paid_with_cash=paid_with_cash)
+    except:
+        data = {
+            'success': False,
+            'message': 'Something wrong happened while creating new order!'
+        }
+        client.captureException()
+        return JsonResponse(data)
 
-    order = Order(open_time=datetime.datetime.now(), daily_number=order_next_number, is_paid=is_paid,
-                  paid_with_cash=paid_with_cash)
-    super_guy = Staff.objects.filter(super_guy=True, user__last_login__contains=datetime.date.today(),
-                                     staff_category__title__iexact='Cook')
     # cooks = Staff.objects.filter(user__last_login__contains=datetime.date.today(), staff_category__title__iexact='Cook')
-    cooks = Staff.objects.filter(available=True, staff_category__title__iexact='Cook')
+    try:
+        cooks = Staff.objects.filter(available=True, staff_category__title__iexact='Cook')
+    except:
+        data = {
+            'success': False,
+            'message': 'Something wrong happened while getting set of cooks!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     # reordering_flag = False
     # while
     # cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks,
@@ -727,41 +1315,87 @@ def make_order(request):
     data = {
         "daily_number": order.daily_number
     }
-    if cook_choose == 'auto':
-        min_index = 0
-        min_count = 100
-        for cook_index in range(0, len(cooks)):
-            cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks[cook_index],
-                                                              order__open_time__contains=datetime.date.today(),
-                                                              order__is_canceled=False, order__close_time__isnull=True,
-                                                              menu_item__can_be_prepared_by__title__iexact='Cook')
-            if min_count > len(cooks_order_content):
-                min_count = len(cooks_order_content)
-                min_index = cook_index
 
-        if len(super_guy) > 0:
-            if len(content) > 6:
-                order.prepared_by = super_guy[0]
-            else:
-                order.prepared_by = cooks[min_index]
-        else:
+    if len(cooks) == 0:
+        data = {
+            'success': False,
+            'message': 'Нет доступных поваров!'
+        }
+        return JsonResponse(data)
+
+    has_cook_content = False
+    for item in content:
+        menu_item = Menu.objects.get(id=item['id'])
+        if menu_item.can_be_prepared_by.title == 'Cook':
+            has_cook_content = True
+
+    if has_cook_content:
+        if cook_choose == 'auto':
+            min_index = 0
+            min_count = 100
+            for cook_index in range(0, len(cooks)):
+                try:
+                    cooks_order_content = OrderContent.objects.filter(order__prepared_by=cooks[cook_index],
+                                                                      order__open_time__contains=datetime.date.today(),
+                                                                      order__is_canceled=False,
+                                                                      order__close_time__isnull=True,
+                                                                      menu_item__can_be_prepared_by__title__iexact='Cook')
+                except:
+                    data = {
+                        'success': False,
+                        'message': 'Something wrong happened while getting cook\'s content!'
+                    }
+                    return JsonResponse(data)
+
+                if min_count > len(cooks_order_content):
+                    min_count = len(cooks_order_content)
+                    min_index = cook_index
+
             order.prepared_by = cooks[min_index]
-    else:
-        order.prepared_by = Staff.objects.get(id=int(cook_choose))
+        else:
+            try:
+                order.prepared_by = Staff.objects.get(id=int(cook_choose))
+            except MultipleObjectsReturned:
+                data = {
+                    'success': False,
+                    'message': 'Multiple staff returned while binding cook to order!'
+                }
+                client.captureException()
+                return JsonResponse(data)
+            except:
+                data = {
+                    'success': False,
+                    'message': 'Something wrong happened while getting set of orders!'
+                }
+                client.captureException()
+                return JsonResponse(data)
+
     content_to_send = []
     order.servery = servery
     order.save()
 
     total = 0
     content_presence = False
+    shashlyk_presence = False
     supplement_presence = False
     for item in content:
         for i in range(0, int(item['quantity'])):
-            new_order_content = OrderContent(order=order, menu_item_id=item['id'], note=item['note'])
+            try:
+                new_order_content = OrderContent(order=order, menu_item_id=item['id'], note=item['note'])
+            except:
+                order.delete()
+                data = {
+                    'success': False,
+                    'message': 'Something wrong happened while creating new order!'
+                }
+                client.captureException()
+                return JsonResponse(data)
             new_order_content.save()
             menu_item = Menu.objects.get(id=item['id'])
             if menu_item.can_be_prepared_by.title == 'Cook':
                 content_presence = True
+            if menu_item.can_be_prepared_by.title == 'Shashlychnik':
+                shashlyk_presence = True
             if menu_item.can_be_prepared_by.title == 'Operator':
                 supplement_presence = True
             total += menu_item.price
@@ -775,16 +1409,36 @@ def make_order(request):
 
     order.total = total
     order.content_completed = not content_presence
+    order.shashlyk_completed = not shashlyk_presence
     order.supplement_completed = not supplement_presence
     order.save()
     if order.is_paid:
         print "Sending request to " + order.servery.ip_address
         print order
-        requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
-        print "Request sent."
+        try:
+            requests.post('http://' + order.servery.ip_address + ':' + LISTNER_PORT, json=prepare_json_check(order))
+        except ConnectionError:
+            order.delete()
+            data = {
+                'success': False,
+                'message': 'Connection error occured while sending to 1C!'
+            }
+            client.captureException()
+            return JsonResponse(data)
+        except:
+            order.delete()
+            data = {
+                'success': False,
+                'message': 'Something wrong happened while sending to 1C!'
+            }
+            client.captureException()
+            return JsonResponse(data)
 
+        print "Request sent."
+    data["success"] = True
     data["total"] = order.total
     data["content"] = json.dumps(content_to_send)
+    data["message"] = ''
     return JsonResponse(data)
 
 
@@ -792,8 +1446,17 @@ def make_order(request):
 @permission_required('queue.change_order')
 def close_order(request):
     order_id = json.loads(request.POST.get('order_id', None))
-    order = Order.objects.get(id=order_id)
+    try:
+        order = Order.objects.get(id=order_id)
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при поиске заказа!'
+        }
+        client.captureException()
+        return JsonResponse(data)
     order.close_time = datetime.datetime.now()
+    order.is_ready = True
     order.save()
     data = {
         'success': True,
@@ -808,8 +1471,25 @@ def close_order(request):
 def cancel_order(request):
     order_id = request.POST.get('id', None)
     if order_id:
-        order = Order.objects.get(id=order_id)
-        order.canceled_by = Staff.objects.get(user=request.user)
+        try:
+            order = Order.objects.get(id=order_id)
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске заказа!'
+            }
+            client.captureException()
+            return JsonResponse(data)
+
+        try:
+            order.canceled_by = Staff.objects.get(user=request.user)
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске персонала!'
+            }
+            client.captureException()
+            return JsonResponse(data)
         order.is_canceled = True
         order.save()
         data = {
@@ -945,12 +1625,28 @@ def to_grill(request):
             product.start_timestamp = datetime.datetime.now()
         product.save()
         order_content = OrderContent.objects.filter(order_id=product.order_id)
-        flag = True
-        for item in order_content:
-            if not item.is_in_grill:
-                flag = False
-        if flag:
-            product.order.is_grilling = True
+
+        shashlychnik_products = OrderContent.objects.filter(order=product.order,
+                                                            menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+        cook_products = OrderContent.objects.filter(order=product.order,
+                                                    menu_item__can_be_prepared_by__title__iexact='Cook')
+
+        # Check if all shashlyk is frying.
+        shashlyk_is_grilling = True
+        for product in shashlychnik_products:
+            if not product.is_in_grill:
+                shashlyk_is_grilling = False
+
+        product.order.is_grilling_shash = shashlyk_is_grilling
+
+        # Check if all shawarma is frying.
+        content_is_grilling = True
+        for product in cook_products:
+            if not product.is_in_grill:
+                content_is_grilling = False
+
+        product.order.is_grilling = content_is_grilling
+        if content_is_grilling or shashlyk_is_grilling:
             product.order.save()
     data = {
         'success': True,
@@ -995,15 +1691,31 @@ def finish_cooking(request):
         product.finish_timestamp = datetime.datetime.now()
         product.save()
         order_content = OrderContent.objects.filter(order_id=product.order_id)
-        flag = True
-        for item in order_content:
-            if item.finish_timestamp is None:
-                flag = False
-        if flag:
-            product.order.content_completed = True
-            print "saving"
+
+        shashlychnik_products = OrderContent.objects.filter(order=product.order,
+                                                            menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+        cook_products = OrderContent.objects.filter(order=product.order,
+                                                    menu_item__can_be_prepared_by__title__iexact='Cook')
+
+        # Check if all shashlyk is frying.
+        shashlyk_is_finished = True
+        for product in shashlychnik_products:
+            if product.finish_timestamp is None:
+                shashlyk_is_finished = False
+
+        product.order.shashlyk_completed = shashlyk_is_finished
+
+        # Check if all shawarma is frying.
+        content_is_finished = True
+        for product in cook_products:
+            if product.finish_timestamp is None:
+                content_is_finished = False
+
+        product.order.content_completed = content_is_finished
+
+        if content_is_finished or shashlyk_is_finished:
             product.order.save()
-            print product.order.content_completed
+
         data = {
             'success': True,
             'product_id': product_id,
@@ -1023,10 +1735,17 @@ def finish_cooking(request):
 # @login_required()
 # @permission_required('queue.can_cook')
 def finish_all_content(request):
+    user = request.user
+    staff = Staff.objects.get(user=user)
     order_id = request.POST.get('id', None)
     if order_id:
         order = Order.objects.get(id=order_id)
-        products = OrderContent.objects.filter(order=order, menu_item__can_be_prepared_by__title__iexact='Cook')
+        shashlychnik_products = OrderContent.objects.filter(order=order,
+                                                            menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+        cook_products = OrderContent.objects.filter(order=order,
+                                                    menu_item__can_be_prepared_by__title__iexact='Cook')
+        products = OrderContent.objects.filter(order=order,
+                                               menu_item__can_be_prepared_by__title__iexact=staff.staff_category.title)
         for product in products:
             product.is_in_grill = False
             product.finish_timestamp = datetime.datetime.now()
@@ -1035,7 +1754,22 @@ def finish_all_content(request):
             if product.staff_maker is None:
                 product.staff_maker = Staff.objects.get(user=request.user)
             product.save()
-        order.content_completed = True
+
+        # Check if all shashlyk is frying.
+        shashlyk_is_finished = True
+        for product in shashlychnik_products:
+            if product.finish_timestamp is None:
+                shashlyk_is_finished = False
+
+        order.shashlyk_completed = shashlyk_is_finished
+
+        # Check if all shawarma is frying.
+        content_is_finished = True
+        for product in cook_products:
+            if product.finish_timestamp is None:
+                content_is_finished = False
+
+        order.content_completed = content_is_finished
         # print "saving"
         order.save()
         data = {
@@ -1052,17 +1786,39 @@ def finish_all_content(request):
 # @login_required()
 # @permission_required('queue.can_cook')
 def grill_all_content(request):
+    user = request.user
+    staff = Staff.objects.get(user=user)
     order_id = request.POST.get('order_id', None)
     if order_id:
         order = Order.objects.get(id=order_id)
-        products = OrderContent.objects.filter(order=order, menu_item__can_be_prepared_by__title__iexact='Cook')
+        shashlychnik_products = OrderContent.objects.filter(order=order,
+                                                            menu_item__can_be_prepared_by__title__iexact='Shashlychnik')
+        cook_products = OrderContent.objects.filter(order=order,
+                                                    menu_item__can_be_prepared_by__title__iexact='Cook')
+        products = OrderContent.objects.filter(order=order,
+                                               menu_item__can_be_prepared_by__title__iexact=staff.staff_category.title)
         for product in products:
             product.start_timestamp = datetime.datetime.now()
             product.grill_timestamp = datetime.datetime.now()
             product.is_in_grill = True
             product.staff_maker = Staff.objects.get(user=request.user)
             product.save()
-        order.is_grilling = True
+
+        # Check if all shashlyk is frying.
+        all_is_grilling = True
+        for product in shashlychnik_products:
+            if not product.is_in_grill:
+                all_is_grilling = False
+
+        order.is_grilling_shash = all_is_grilling
+
+        # Check if all shawarma is frying.
+        all_is_grilling = True
+        for product in cook_products:
+            if not product.is_in_grill:
+                all_is_grilling = False
+
+        order.is_grilling = all_is_grilling
         # print "saving"
         order.save()
         data = {
@@ -1140,9 +1896,54 @@ def ready_order(request):
 @permission_required('queue.change_order')
 def pay_order(request):
     order_id = request.POST.get('id', None)
+    ids = json.loads(request.POST.get('ids', None))
+    values = json.loads(request.POST.get('values', None))
+    paid_with_cash = json.loads(request.POST['paid_with_cash'])
     if order_id:
-        order = Order.objects.get(id=order_id)
+        for index, item_id in enumerate(ids):
+            try:
+                item = OrderContent.objects.get(id=item_id)
+            except:
+                data = {
+                    'success': False,
+                    'message': 'Что-то пошло не так при поиске продуктов!'
+                }
+                return JsonResponse(data)
+            item.quantity = float(values[index])
+            item.save()
+
+        try:
+            order = Order.objects.get(id=order_id)
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске заказа!'
+            }
+            return JsonResponse(data)
         order.is_paid = True
+        order.paid_with_cash = paid_with_cash
+
+        total = 0
+        content_presence = False
+        supplement_presence = False
+        try:
+            content = OrderContent.objects.filter(order=order)
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске продуктов!'
+            }
+            return JsonResponse(data)
+        for item in content:
+            menu_item = item.menu_item
+            if menu_item.can_be_prepared_by.title == 'Cook':
+                content_presence = True
+            if menu_item.can_be_prepared_by.title == 'Operator':
+                supplement_presence = True
+            total += menu_item.price * item.quantity
+        order.total = total
+        # order.supplement_completed = not supplement_presence
+        # order.content_completed = not content_presence
         order.save()
         print "Sending request to " + order.servery.ip_address
         # print order
@@ -1164,7 +1965,14 @@ def pay_order(request):
 def cancel_item(request):
     product_id = request.POST.get('id', None)
     if product_id:
-        item = OrderContent.objects.get(id=product_id)
+        try:
+            item = OrderContent.objects.get(id=product_id)
+        except:
+            data = {
+                'success': False,
+                'message': 'Что-то пошло не так при поиске продуктов!'
+            }
+            return JsonResponse(data)
         item.canceled_by = request.user
         item.is_canceled = True
         item.save()
@@ -1182,18 +1990,329 @@ def cancel_item(request):
 @login_required()
 def statistic_page(request):
     template = loader.get_template('queue/statistics.html')
+    avg_preparation_time = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=False,
+                                                is_canceled=False).values(
+        'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))
+    min_preparation_time = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=False,
+                                                is_canceled=False).values(
+        'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))
+    max_preparation_time = Order.objects.filter(open_time__contains=datetime.date.today(), close_time__isnull=False,
+                                                is_canceled=False).values(
+        'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))
     context = {
         'total_orders': len(Order.objects.filter(open_time__contains=datetime.date.today())),
-        'canceled_orders': len(Order.objects.filter(open_time__contains=datetime.date.today(), is_canceled__isnull=True)),
+        'canceled_orders': len(
+            Order.objects.filter(open_time__contains=datetime.date.today(), is_canceled__isnull=True)),
+        'avg_prep_time': str(avg_preparation_time['preparation_time']).split('.', 2)[0],
+        'min_prep_time': str(min_preparation_time['preparation_time']).split('.', 2)[0],
+        'max_prep_time': str(max_preparation_time['preparation_time']).split('.', 2)[0],
         'cooks': [{'person': cook,
-                   'prepared_orders_count': len(Order.objects.filter(prepared_by=cook,
-                                                                 open_time__contains=datetime.date.today())),
+                   'prepared_orders_count': len(
+                       Order.objects.filter(prepared_by=cook, open_time__contains=datetime.date.today(),
+                                            close_time__isnull=False, is_canceled=False)),
                    'prepared_products_count': len(OrderContent.objects.filter(order__prepared_by=cook,
-                                                        order__open_time__contains=datetime.date.today(),
-                                                        menu_item__can_be_prepared_by__title__iexact='Cook'))}
+                                                                              order__open_time__contains=datetime.date.today(),
+                                                                              order__close_time__isnull=False,
+                                                                              order__is_canceled=False,
+                                                                              menu_item__can_be_prepared_by__title__iexact='Cook')),
+                   'avg_prep_time': str(
+                       Order.objects.filter(prepared_by=cook, open_time__contains=datetime.date.today(),
+                                            close_time__isnull=False, is_canceled=False).values(
+                           'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))[
+                           'preparation_time']).split('.', 2)[0],
+                   'min_prep_time': str(
+                       Order.objects.filter(prepared_by=cook, open_time__contains=datetime.date.today(),
+                                            close_time__isnull=False, is_canceled=False).values(
+                           'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))[
+                           'preparation_time']).split('.', 2)[0],
+                   'max_prep_time': str(
+                       Order.objects.filter(prepared_by=cook, open_time__contains=datetime.date.today(),
+                                            close_time__isnull=False, is_canceled=False).values(
+                           'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))[
+                           'preparation_time']).split('.', 2)[0]
+                   }
                   for cook in Staff.objects.filter(staff_category__title__iexact='Cook').order_by('user__first_name')]
     }
     return HttpResponse(template.render(context, request))
+
+
+@login_required()
+def statistic_page_ajax(request):
+    start_date = request.POST.get('start_date', None)
+    start_date_conv = datetime.datetime.strptime(start_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    end_date = request.POST.get('end_date', None)
+    end_date_conv = datetime.datetime.strptime(end_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    template = loader.get_template('queue/statistics_ajax.html')
+    try:
+        avg_preparation_time = Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv,
+                                                    close_time__isnull=False, is_canceled=False).values(
+            'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при вычислении среднего времени готовки!'
+        }
+        return JsonResponse(data)
+
+    try:
+        min_preparation_time = Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv,
+                                                    close_time__isnull=False, is_canceled=False).values(
+            'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при вычислении минимального времени готовки!'
+        }
+        return JsonResponse(data)
+
+    try:
+        max_preparation_time = Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv,
+                                                    close_time__isnull=False, is_canceled=False).values(
+            'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при вычислении максимального времени готовки!'
+        }
+        return JsonResponse(data)
+
+    try:
+        context = {
+            'total_orders': len(Order.objects.filter(open_time__gte=start_date_conv, open_time__lte=end_date_conv)),
+            'canceled_orders': len(
+                Order.objects.filter(open_time__contains=datetime.date.today(), is_canceled__isnull=True)),
+            'avg_prep_time': str(avg_preparation_time['preparation_time']).split('.', 2)[0],
+            'min_prep_time': str(min_preparation_time['preparation_time']).split('.', 2)[0],
+            'max_prep_time': str(max_preparation_time['preparation_time']).split('.', 2)[0],
+            'cooks': [{'person': cook,
+                       'prepared_orders_count': len(Order.objects.filter(prepared_by=cook,
+                                                                         open_time__gte=start_date_conv,
+                                                                         open_time__lte=end_date_conv,
+                                                                         close_time__isnull=False, is_canceled=False)),
+                       'prepared_products_count': len(OrderContent.objects.filter(order__prepared_by=cook,
+                                                                                  order__open_time__gte=start_date_conv,
+                                                                                  order__open_time__lte=end_date_conv,
+                                                                                  order__close_time__isnull=False,
+                                                                                  order__is_canceled=False,
+                                                                                  menu_item__can_be_prepared_by__title__iexact='Cook')),
+                       'avg_prep_time': str(Order.objects.filter(prepared_by=cook, open_time__gte=start_date_conv,
+                                                                 open_time__lte=end_date_conv, close_time__isnull=False,
+                                                                 is_canceled=False).values(
+                           'open_time', 'close_time').aggregate(preparation_time=Avg(F('close_time') - F('open_time')))[
+                                                'preparation_time']).split('.', 2)[0],
+                       'min_prep_time': str(Order.objects.filter(prepared_by=cook, open_time__gte=start_date_conv,
+                                                                 open_time__lte=end_date_conv, close_time__isnull=False,
+                                                                 is_canceled=False).values(
+                           'open_time', 'close_time').aggregate(preparation_time=Min(F('close_time') - F('open_time')))[
+                                                'preparation_time']).split('.', 2)[0],
+                       'max_prep_time': str(Order.objects.filter(prepared_by=cook, open_time__gte=start_date_conv,
+                                                                 open_time__lte=end_date_conv, close_time__isnull=False,
+                                                                 is_canceled=False).values(
+                           'open_time', 'close_time').aggregate(preparation_time=Max(F('close_time') - F('open_time')))[
+                                                'preparation_time']).split('.', 2)[0]
+                       }
+                      for cook in
+                      Staff.objects.filter(staff_category__title__iexact='Cook').order_by('user__first_name')]
+        }
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при подготовки шаблона!'
+        }
+        return JsonResponse(data)
+    data = {
+        'html': template.render(context, request)
+    }
+    return JsonResponse(data=data)
+
+
+@login_required()
+def opinion_statistics(request):
+    template = loader.get_template('queue/opinion_statistics.html')
+    avg_mark = OrderOpinion.objects.filter(post_time__contains=datetime.date.today()).values('mark').aggregate(
+        avg_mark=Avg('mark'))
+    min_mark = OrderOpinion.objects.filter(post_time__contains=datetime.date.today()).values('mark').aggregate(
+        min_mark=Min('mark'))
+    max_mark = OrderOpinion.objects.filter(post_time__contains=datetime.date.today()).values('mark').aggregate(
+        max_mark=Max('mark'))
+    context = {
+        'total_orders': len(OrderOpinion.objects.filter(post_time__contains=datetime.date.today())),
+        'avg_mark': avg_mark['avg_mark'],
+        'min_mark': min_mark['min_mark'],
+        'max_mark': max_mark['max_mark'],
+        'opinions': [opinion for opinion in
+                     OrderOpinion.objects.filter(post_time__contains=datetime.date.today()).order_by('post_time')]
+    }
+    return HttpResponse(template.render(context, request))
+
+
+@login_required()
+def opinion_statistics_ajax(request):
+    start_date = request.POST.get('start_date', None)
+    start_date_conv = datetime.datetime.strptime(start_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    end_date = request.POST.get('end_date', None)
+    end_date_conv = datetime.datetime.strptime(end_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    template = loader.get_template('queue/opinion_statistics_ajax.html')
+    try:
+        avg_mark = OrderOpinion.objects.filter(post_time__gte=start_date_conv,
+                                               post_time__lte=end_date_conv).values('mark').aggregate(
+            avg_mark=Avg('mark'))
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при вычислении средней оценки!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+
+    try:
+        min_mark = OrderOpinion.objects.filter(post_time__gte=start_date_conv,
+                                               post_time__lte=end_date_conv).values('mark').aggregate(
+            min_mark=Min('mark'))
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при вычислении минимальной оценки!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+
+    try:
+        max_mark = OrderOpinion.objects.filter(post_time__gte=start_date_conv,
+                                               post_time__lte=end_date_conv).values('mark').aggregate(
+            max_mark=Max('mark'))
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при вычислении максимальной оценки!'
+        }
+        return JsonResponse(data)
+
+    try:
+        context = {
+            'total_orders': len(
+                OrderOpinion.objects.filter(post_time__gte=start_date_conv, post_time__lte=end_date_conv)),
+            'avg_mark': avg_mark['avg_mark'],
+            'min_mark': min_mark['min_mark'],
+            'max_mark': max_mark['max_mark'],
+            'opinions': [opinion for opinion in
+                         OrderOpinion.objects.filter(post_time__gte=start_date_conv,
+                                                     post_time__lte=end_date_conv).order_by(
+                             'order__open_time')]
+        }
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при построении шаблона!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+
+    data = {
+        'html': template.render(context, request)
+    }
+    return JsonResponse(data=data)
+
+
+@login_required()
+def pause_statistic_page(request):
+    template = loader.get_template('queue/pause_statistics.html')
+    avg_duration_time = PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                    end_timestamp__contains=datetime.date.today()).values(
+        'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('end_timestamp') - F('start_timestamp')))
+    min_duration_time = PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                    end_timestamp__contains=datetime.date.today()).values(
+        'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('end_timestamp') - F('start_timestamp')))
+    max_duration_time = PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                    end_timestamp__contains=datetime.date.today()).values(
+        'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('end_timestamp') - F('start_timestamp')))
+    context = {
+        'total_pauses': len(PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                        end_timestamp__contains=datetime.date.today())),
+        'avg_duration': str(avg_duration_time['duration']).split('.', 2)[0],
+        'min_duration': str(min_duration_time['duration']).split('.', 2)[0],
+        'max_duration': str(max_duration_time['duration']).split('.', 2)[0],
+        'pauses': [{
+                       'staff': pause.staff,
+                       'start_timestamp': str(pause.start_timestamp).split('.', 2)[0],
+                       'end_timestamp': str(pause.end_timestamp).split('.', 2)[0],
+                       'duration': str(pause.end_timestamp - pause.start_timestamp).split('.', 2)[0]
+                   }
+                   for pause in PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                            end_timestamp__contains=datetime.date.today()).order_by(
+                'start_timestamp')]
+    }
+    return HttpResponse(template.render(context, request))
+
+
+@login_required()
+def pause_statistic_page_ajax(request):
+    start_date = request.POST.get('start_date', None)
+    start_date_conv = datetime.datetime.strptime(start_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    end_date = request.POST.get('end_date', None)
+    end_date_conv = datetime.datetime.strptime(end_date, "%Y/%m/%d %H:%M")  # u'2018/01/04 22:31'
+    template = loader.get_template('queue/pause_statistics_ajax.html')
+    try:
+        avg_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
+                                                        end_timestamp__lte=end_date_conv).values(
+            'start_timestamp', 'end_timestamp').aggregate(duration=Avg(F('start_timestamp') - F('end_timestamp')))
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при вычислении средней продолжительности пауз!'
+        }
+        return JsonResponse(data)
+
+    try:
+        min_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
+                                                        end_timestamp__lte=end_date_conv).values(
+            'start_timestamp', 'end_timestamp').aggregate(duration=Min(F('start_timestamp') - F('start_timestamp')))
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при вычислении минимальной продолжительности пауз!'
+        }
+        return JsonResponse(data)
+
+    try:
+        max_duration_time = PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
+                                                        end_timestamp__lte=end_date_conv).values(
+            'start_timestamp', 'end_timestamp').aggregate(duration=Max(F('start_timestamp') - F('start_timestamp')))
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при вычислении максимальной продолжительности пауз!'
+        }
+        return JsonResponse(data)
+
+    try:
+        context = {
+            'total_pauses': len(PauseTracker.objects.filter(start_timestamp__gte=start_date_conv,
+                                                            end_timestamp__lte=end_date_conv)),
+            'avg_duration': str(avg_duration_time['duration']).split('.', 2)[0],
+            'min_duration': str(min_duration_time['duration']).split('.', 2)[0],
+            'max_duration': str(max_duration_time['duration']).split('.', 2)[0],
+            'pauses': [{
+                           'staff': pause.staff,
+                           'start_timestamp': str(pause.start_timestamp).split('.', 2)[0],
+                           'end_timestamp': str(pause.end_timestamp).split('.', 2)[0],
+                           'duration': str(pause.end_timestamp - pause.start_timestamp).split('.', 2)[0]
+                       }
+                       for pause in PauseTracker.objects.filter(start_timestamp__contains=datetime.date.today(),
+                                                                end_timestamp__contains=datetime.date.today()).order_by(
+                    'start_timestamp')]
+        }
+    except:
+        data = {
+            'success': False,
+            'message': 'Что-то пошло не так при построении шаблона!'
+        }
+        client.captureException()
+        return JsonResponse(data)
+    data = {
+        'html': template.render(context, request)
+    }
+    return JsonResponse(data=data)
 
 
 def prepare_json_check(order):
@@ -1232,7 +2351,10 @@ def prepare_json_check(order):
         number += 1
         sum += item['menu_item__price'] * item['total']
 
-    cook_name = u"{}".format(order.prepared_by.user.first_name)
+    if order.prepared_by:
+        cook_name = u"{}".format(order.prepared_by.user.first_name)
+    else:
+        cook_name = u""
     order_number = str(order.daily_number % 100)
 
     print u"Cash: {}".format(aux_query[0]['order__paid_with_cash'])

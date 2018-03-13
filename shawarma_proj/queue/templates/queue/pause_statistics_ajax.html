@@ -1,0 +1,41 @@
+<div class="stat-sect-container">
+    Всего заказов: {{ total_pauses }}
+    Мин. оценка: {{ min_duration }}
+    Ср. оценка: {{ avg_duration }}
+    Макс. оценка: {{ max_duration }}
+    <div class="stat-cook-table-header">
+        <div class="stat-opinion-order-datetime">
+            Повар
+        </div>
+        <div class="stat-opinion-daily-number">
+            Начало
+        </div>
+        <div class="stat-opinion-note">
+            Конец
+        </div>
+        <div class="stat-opinion-mark">
+            Продолжительность
+        </div>
+    </div>
+    {% for pause in pauses %}
+        <div class="stat-view-container">
+            <div class="stat-view" id="pause-{{ forloop.counter }}">
+                <div class="stat-opinion-order-datetime">
+                    {{ pause.staff }}
+                </div>
+                <div class="stat-opinion-daily-number">
+                    {{ pause.start_timestamp }}
+                </div>
+                <div class="stat-opinion-note">
+                    {{ pause.start_timestamp }}
+                </div>
+                <div class="stat-opinion-mark">
+                    {{ pause.duration }}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    <div class="stat-actions-container">
+        <button onclick="UpdateStatistics()">Обновить</button>
+    </div>
+</div>

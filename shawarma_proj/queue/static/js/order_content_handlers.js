@@ -29,8 +29,67 @@ function ReadyOrder(id) {
     }
 }
 
-function PayOrder(id) {
+function PayOrderCash(id) {
     var url = $('#urls').attr('data-pay-url');
+    var quantity_inputs_values = $('.quantityInput').map(
+        function()
+        {
+            return parseFloat((this.value).replace(/,/g, '.'));
+        }).get();
+    var quantity_inputs_ids = $('.quantityInput').map(
+        function()
+        {
+            return $(this).attr('item-id');
+        }).get();
+    var prices = $('.quantityInput').map(
+        function()
+        {
+            return parseFloat($(this).attr('cost'));
+        }).get();
+    var total_cost = 0;
+    for(var i = 0; i<quantity_inputs_values.length; i++){
+        total_cost +=prices[i]*quantity_inputs_values[i];
+    }
+    var confirmation = confirm("К оплате: " + total_cost);
+    if (confirmation) {
+        console.log(id + ' ' + url);
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken)
+            }
+        });
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: {
+                'id': id,
+                'values': JSON.stringify(quantity_inputs_values),
+                'ids': JSON.stringify(quantity_inputs_ids),
+                'paid_with_cash': JSON.stringify(true)
+            },
+            dataType: 'json',
+            success: function (data) {
+                location.href = $('#current-queue').parent().attr('href');
+                //if (data['success']) {
+                //    alert('Success!');
+                //}
+            }
+        });
+    }
+}
+
+function PayOrderCard(id) {
+    var url = $('#urls').attr('data-pay-url');
+    var quantity_inputs_values = $('.quantityInput').map(
+        function()
+        {
+            return parseFloat((this.value).replace(/,/g, '.'));
+        }).get();
+    var quantity_inputs_ids = $('.quantityInput').map(
+        function()
+        {
+            return $(this).attr('item-id');
+        }).get();
     var confirmation = confirm("Заказ оплачен?");
     if (confirmation) {
         console.log(id + ' ' + url);
@@ -43,7 +102,10 @@ function PayOrder(id) {
             type: 'POST',
             url: url,
             data: {
-                'id': id
+                'id': id,
+                'values': JSON.stringify(quantity_inputs_values),
+                'ids': JSON.stringify(quantity_inputs_ids),
+                'paid_with_cash': JSON.stringify(false)
             },
             dataType: 'json',
             success: function (data) {

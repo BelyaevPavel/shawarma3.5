@@ -2,6 +2,7 @@
  * Created by paul on 21.07.17.
  */
 var ready_order_numbers = [];
+var is_voicing = false;
 var csrftoken = $("[name=csrfmiddlewaretoken]").val();
 $(document).ready(function () {
         refresher();
@@ -19,7 +20,8 @@ function refresher() {
             // var difference = updated_ready_numbers.filter(function (el) {
             //     return !ready_order_numbers.includes(el)
             // });
-            process_numbers(updated_ready_numbers, voiced_flags);
+            if (!is_voicing)
+                process_numbers(updated_ready_numbers, voiced_flags);
             //console.log(difference);
             //sound_number(difference);
             /*for(var i=0; i<updated_ready_numbers.length; i++)
@@ -49,7 +51,7 @@ function refresher() {
 
         },
         complete: function () {
-            setTimeout(refresher, 5000);
+            setTimeout(refresher, 1000);
         }
     });
 }
@@ -57,9 +59,10 @@ function refresher() {
 // Test string:
 // process_numbers(['55', '161', '110', '115', '16'], [false, false, false, false, false]);
 function process_numbers(updated_ready_numbers, voiced_flags) {
+    is_voicing = true;
     $.each(updated_ready_numbers, function (index, value) {
-        setTimeout(function () {
-            if (!voiced_flags[index]) {
+        if (!voiced_flags[index]) {
+            setTimeout(function () {
                 aux = value;
                 console.log(aux);
                 sound_number(value % 100);
@@ -80,9 +83,12 @@ function process_numbers(updated_ready_numbers, voiced_flags) {
                 ).fail(function () {
                     console.log('Failed ' + aux);
                 });
-            }
-        }, 3500 * index);
+            }, 3500 * index);
+        }
     });
+    setTimeout(function () {
+        is_voicing = false;
+    }, 3500*updated_ready_numbers.length);
 }
 
 function sound_number(value) {
@@ -90,11 +96,10 @@ function sound_number(value) {
     var aux_str_100 = '';
     var aux_str_10 = '';
     var aux_str = '#speaker-' + value;
-    if ((value > 20 && value % 10 != 0)|| value>100)
-    {
-        if (str_value.length==3){
-            aux_str_100 = '#speaker-' + parseInt(str_value[0])*100;
-            aux_str_10 = '#speaker-' + parseInt(str_value[1])*10;
+    if ((value > 20 && value % 10 != 0) || value > 100) {
+        if (str_value.length == 3) {
+            aux_str_100 = '#speaker-' + parseInt(str_value[0]) * 100;
+            aux_str_10 = '#speaker-' + parseInt(str_value[1]) * 10;
             aux_str = '#speaker-' + str_value[2];
             console.log(aux_str_100);
             console.log(aux_str_10);
@@ -113,7 +118,7 @@ function sound_number(value) {
             }, 1750);
             $(aux_str_100)[0].load();
 
-            if (parseInt(str_value[1])*10+parseInt(str_value[2])>20) {
+            if (parseInt(str_value[1]) * 10 + parseInt(str_value[2]) > 20) {
                 setTimeout(function () {
                     $(aux_str_10)[0].play();
                 }, 2250);
@@ -125,13 +130,13 @@ function sound_number(value) {
             }
             else {
                 setTimeout(function () {
-                    $('#speaker-'+str_value[1]+str_value[2])[0].play();
+                    $('#speaker-' + str_value[1] + str_value[2])[0].play();
                 }, 2500);
-                $('#speaker-'+str_value[1]+str_value[2])[0].load();
+                $('#speaker-' + str_value[1] + str_value[2])[0].load();
             }
         }
         else {
-            aux_str_10 = '#speaker-' + parseInt(str_value[0])*10;
+            aux_str_10 = '#speaker-' + parseInt(str_value[0]) * 10;
             aux_str = '#speaker-' + str_value[1];
             console.log(aux_str_10);
             console.log(aux_str);
