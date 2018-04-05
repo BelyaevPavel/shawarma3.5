@@ -1,0 +1,23 @@
+{% extends 'shaw_queue/base.html' %}
+{% block aditional_static %}
+    {% load static %}
+    <script type="text/javascript" src="{% static 'js/cook_interface_alt_handlers.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <input hidden id="urls" data-take-url="{% url 'take' %}" data-grill-url="{% url 'to_grill' %}"
+           data-finish-url="{% url 'finish_cooking' %}" data-grill-timer-url="{% url 'grill_timer' %}"
+           data-next-url="{% url 'next_to_prepare' %}" data-ajax="{% url 'cook_interface_ajax' %}"
+           data-finish-all-content-url="{% url 'finish_all_content' %}" data-select-url="{% url 'select_order' %}"
+           data-grill-all-content-url="{% url 'grill_all_content' %}" pause-url="{% url 'cook_pause' %}">
+    <div class="cook-pause-button {% if not staff.available %}
+        header-active
+    {% endif %}" onclick="Pause()" id="cook_pause">
+        Пауза
+    </div>
+    <div id="selected-order-content" class="selected-order-display">
+        {% include 'shaw_queue/selected_order_content.html' with selected_order=free_order %}
+    </div>
+    <div id="other-orders-queue" class="cook-order-queue-display">
+        {% include 'shaw_queue/cooks_order_queue.html' with cooks_orders=cooks_orders %}
+    </div>
+{% endblock %}

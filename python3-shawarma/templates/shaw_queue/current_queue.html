@@ -1,0 +1,44 @@
+{% include 'shaw_queue/header.html' %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
+<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/handlers.js' %}"></script>
+
+<table class="currentQueueTable">
+    <thead>
+    <tr>
+        <td>
+            In production
+        </td>
+        <td>
+            Ready
+        </td>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>
+            {% if open_orders %}
+                {% for order in open_orders %}
+                    <tr class="currentOrderRow">
+                        <td class="currentOrderTitleCell">
+                            <a href="{% url 'order_content' order_id=order.id %}">{{ order.daily_number }}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+        </td>
+        <td>
+            {% if ready_orders %}
+                {% for order in ready_orders %}
+                    <tr class="currentOrderRow">
+                        <td class="currentOrderTitleCell">
+                            {{ order.daily_number }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+        </td>
+    </tr>
+    </tbody>
+</table>

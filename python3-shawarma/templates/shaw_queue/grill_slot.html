@@ -1,0 +1,15 @@
+<div class="in-grill-slot-container">
+    <div class="in-grill-slot" index="{{ product.product.id }}"
+         onclick="FinishItemCooking({{ product.product.id }})">
+        <div class="grill-title-container">
+            <span class="grill-title">
+                {{ product.product.menu_item.title }}
+            </span>
+        </div>
+        <div class="grill-timer-container">
+            <span class="grill-timer">
+                {{ product.product.grill_timestamp|timesince }}
+            </span>
+        </div>
+    </div>
+</div>

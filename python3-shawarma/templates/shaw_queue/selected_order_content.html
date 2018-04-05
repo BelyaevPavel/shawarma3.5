@@ -1,0 +1,59 @@
+<div class="cook-daily-number" order-id="{{ selected_order.id }}"> Заказ №{{ selected_order.daily_number }} </div>
+{% for content_item in order_content %}
+    <div class="cook-item-container">
+        <div class="cook-order-item
+        {% if content_item.item.finish_timestamp is not None %}
+            in-grill-slot
+        {% else %}
+            {% if content_item.item.start_timestamp is not None %}
+                in-progress-item
+            {% endif %}
+        {% endif %}" id="product_id_{{ content_item.item.id }}" onclick="
+                {% if content_item.item.finish_timestamp is not None %}
+
+                {% else %}
+                    {% if content_item.item.start_timestamp is not None %}
+                        FinishItemCooking({{ content_item.item.id }})
+                    {% else %}
+                        ItemToGrill({{ content_item.item.id }})
+                    {% endif %}
+                {% endif %}">
+            №{{ content_item.number }} {{ content_item.item.menu_item.title }} <p style="margin: 0px"><span class="cook-item-comment">{{ content_item.item.note }}</span></p>
+        </div>
+    </div>
+{% empty %}
+    <div class="cook-empty">
+        Нет заказов.
+    </div>
+{% endfor %}
+{% if staff_category.title == 'Shashlychnik' %}
+    {% if order_content and not selected_order.shashlyk_completed %}
+        <div class="cook-complete-all-button" onclick="
+                {% if selected_order.is_grilling_shash %}
+                    FinishAllContent({{ selected_order.id }})
+                {% else %}
+                    GrillAllContent({{ selected_order.id }})
+                {% endif %}">
+                {% if selected_order.is_grilling_shash %}
+                    Завершить всё
+                {% else %}
+                    Жарить всё
+                {% endif %}
+        </div>
+     {% endif %}
+{% elif staff_category.title == 'Cook' %}
+    {% if order_content and not selected_order.content_completed %}
+        <div class="cook-complete-all-button" onclick="
+                {% if selected_order.is_grilling %}
+                    FinishAllContent({{ selected_order.id }})
+                {% else %}
+                    GrillAllContent({{ selected_order.id }})
+                {% endif %}">
+                {% if selected_order.is_grilling %}
+                    Завершить всё
+                {% else %}
+                    Жарить всё
+                {% endif %}
+        </div>
+     {% endif %}
+{% endif %}

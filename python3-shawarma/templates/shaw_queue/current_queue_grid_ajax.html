@@ -1,0 +1,26 @@
+{% load static %}
+<input id="urls" hidden data-close-order-url="{% url 'close_order' %}" data-cancel-order-url="{% url 'cancel_order' %}"
+voice-all-url="{% url 'voice_all' %}">
+<div class="open-orders">
+    {% for open_order in open_orders %}
+        {% include 'shaw_queue/open_order_block.html' with open_order=open_order %}
+    {% empty %}
+        <div>
+            Нет заказов.
+        </div>
+    {% endfor %}
+</div>
+<div class="ready-orders">
+    <div>
+        <button onclick="VoiceAll()">
+            Озвучить всё
+        </button>
+    </div>
+    {% for open_order in ready_orders %}
+        {% include 'shaw_queue/open_order_block.html' with open_order=open_order %}
+    {% empty %}
+        <div>
+            Нет заказов.
+        </div>
+    {% endfor %}
+</div>

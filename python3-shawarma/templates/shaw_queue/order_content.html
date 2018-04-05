@@ -1,0 +1,84 @@
+{% extends 'shaw_queue/base.html' %}
+{% block aditional_static %}
+    {% load static %}
+    <script type="text/javascript" src="{% static 'js/order_content_handlers.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <input hidden id="urls" data-cancel-item-url="{% url 'cancel_item' %}" data-ready-url="{% url 'ready_order' %}"
+           data-cancel-order-url="{% url 'cancel_order' %}" data-finish-item-url="{%  url 'finish_supplement' %}"
+           data-pay-url="{% url 'pay_order' %}">
+    <table class="currentOrderTable">
+        <thead>
+        {% if order_info %}
+            <tr>
+                <td>
+                    №: {{ order_info.daily_number }}
+                    Prepared by: {{ maker }}
+                </td>
+                <td>
+                    Открыт: {{ order_info.open_time }}
+                </td>
+                <td>
+                    Закрыт: {{ order_info.close_time }}
+                </td>
+                <td>
+                    Касса: {{ order_info.servery }}
+                </td>
+            </tr>
+        {% endif %}
+        </thead>
+    </table>
+    {% if order_content %}
+        {% for order_item in order_content %}
+            <div class="order-item-container">
+                <div class="order-item-title {% if order_item.finish_timestamp %}ready
+                {% endif %}">
+                    {{ order_item.menu_item }}
+                </div>
+                <div class="order-item-note {% if order_item.finish_timestamp %}ready
+                {% endif %}">
+                    "{{ order_item.note }}"
+                </div>
+                <div class="order-item-maker {% if order_item.finish_timestamp %}ready
+                {% endif %}">
+                    {{ order_item.staff_maker }}
+                </div>
+                <div class="order-item-maker {% if order_item.finish_timestamp %}ready
+                {% endif %}">
+                    <input class="quantityInput" type="text" value="{{ order_item.quantity }}" cost="{{ order_item.menu_item.price }}"
+                           item-id="{{ order_item.id }}" {% if order_info.is_paid %}disabled{% endif %}>
+                </div>
+                <div class="order-item-actions">
+                    {% if order_item.menu_item.can_be_prepared_by.title == 'Operator' or order_item.menu_item.can_be_prepared_by.title == staff_category.title %}
+                        <button onclick="FinishCooking({{ order_item.id }})">
+                            Закончить
+                        </button>
+                    {% endif %}
+                    <button onclick="CancelItem({{ order_item.id }})">
+                        Отменить
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+            Нет товаров.
+    {% endif %}
+    <p>
+        <input type="radio" id="servery_auto" name="servery_choose" value="auto" checked>
+        <label for="servery_auto">Автоназначение</label>
+    </p>
+    {% for servery in serveries %}
+        <p>
+            <input type="radio" id="servery_{{ servery.id }}" name="servery_choose" value="{{ servery.id }}">
+            <label for="servery_{{ servery.id }}">{{ servery.title }}</label>
+        </p>
+    {% empty %}
+        Места выдачи внесены.
+    {% endfor %}
+    <button onclick="ReadyOrder({{ order_info.id }})" {% if not ready %}disabled{% endif %}>Заказ готов</button>
+    {% if staff_category.title == 'Cashier' %}
+        <button onclick="PayOrderCash({{ order_info.id }})" {% if order_info.is_paid %}disabled{% endif %}>Оплатить Наличными</button>
+        <button onclick="PayOrderCard({{ order_info.id }})" {% if order_info.is_paid %}disabled{% endif %}>Оплатить Картой</button>
+    {% endif %}
+    <button onclick="PrintOrder({{ order_info.id }})">Печать</button>
+{% endblock %}

@@ -1,0 +1,13 @@
+<div class="menu-content">
+    {% include "shaw_queue/menu_categories_header.html" with menu_categories=menu_categories %}
+    <div class="menu-item-container">
+	    {% if menu_items %}
+		{% for menu_item in menu_items %}
+		    {% include "shaw_queue/menu_item.html" with menu_item=menu_item %}
+		{% endfor %}
+	    {% else %}
+		<p>В меню пусто.</p>
+	    {% endif %}
+    </div>
+</div>
+{% load static %}

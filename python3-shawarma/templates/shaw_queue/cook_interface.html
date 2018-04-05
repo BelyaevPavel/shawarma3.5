@@ -1,0 +1,47 @@
+{% extends 'shaw_queue/base.html' %}
+{% block aditional_static %}
+    {% load static %}
+    <script type="text/javascript" src="{% static 'js/cook_interface_handlers.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <input hidden id="urls" data-take-url="{% url 'take' %}" data-grill-url="{% url 'to_grill' %}"
+           data-finish-url="{% url 'finish_cooking' %}" data-grill-timer-url="{% url 'grill_timer' %}"
+           data-next-url="{% url 'next_to_prepare' %}">
+    <div class="next-to-prepare-container">
+        {% if next_product %}
+            <div class="next-to-prepare-item" onclick="TakeItem({{ next_product.id }})">
+                <div class="item-title">
+                    №{{ next_product.order.daily_number }} {{ next_product.menu_item.title }}
+                </div>
+                <div class="item-note">No onion.</div>
+            </div>
+        {% else %}
+            <div class="next-to-prepare-item">
+                Нечего готовить.
+            </div>
+        {% endif %}
+    </div>
+    <div class="in-progress-container">
+        {% if in_progress %}
+            <div class="in-progress-item" onclick="ItemToGrill({{ in_progress.id }})">
+                <div class="item-title">№{{ in_progress.order.daily_number }} {{ in_progress.menu_item.title }}</div>
+                <div class="item-note">{{ in_progress.note }}</div>
+            </div>
+        {% else %}
+            <div class="in-progress-item">
+                Ничего не готовится.
+            </div>
+        {% endif %}
+    </div>
+    <div class="in-grill-container">
+        {% for product in in_grill %}
+            {% include 'shaw_queue/grill_slot.html' with product=product %}
+        {% empty %}
+            <div class="in-grill-slot-container">
+                <div class="in-grill-slot" id="slot1">
+                    Пусто
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'shaw_queue/base.html' %}
+{% block aditional_static %}
+{% load static %}
+    <link rel="stylesheet" type="text/css" href={% static 'queue/jquery.datetimepicker.min.css' %}>
+    <script type="text/javascript" src="{% static 'js/statistics_handlers.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery.datetimepicker.full.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <input hidden id="urls" data-update-statistics-url="{% url 'update_opinion_statistics' %}">
+    <div class="stat-controls">
+        <label for="datetimepicker1">От:</label>
+        <input type="text" id="datetimepicker1"/>
+        <label for="datetimepicker2">До:</label>
+        <input type="text" id="datetimepicker2"/>
+    </div>
+    <div id="statistics-content">
+    <div class="stat-sect-container">
+        Всего заказов: {{ total_opinions }}
+        Мин. оценка: {{ min_mark }}
+        Ср. оценка: {{ avg_mark }}
+        Макс. оценка: {{ max_mark }}
+        <div class="stat-cook-table-header">
+            <div class="stat-opinion-order-datetime">
+                Дата и время
+            </div>
+            <div class="stat-opinion-daily-number">
+                Номер заказа
+            </div>
+            <div class="stat-opinion-note">
+                Отзыв
+            </div>
+            <div class="stat-opinion-mark">
+                Оценка
+            </div>
+        </div>
+        {% for opinion in opinions %}
+            <div class="stat-view-container">
+                <div class="stat-view" id="opinion-{{ forloop.counter }}">
+                    <div class="stat-opinion-order-datetime">
+                        {{ opinion.order.open_time }}
+                    </div>
+                    <div class="stat-opinion-daily-number">
+                        {{ opinion.order.daily_number }}
+                    </div>
+                    <div class="stat-opinion-note">
+                        {% if opinion.note %}
+                            {{ opinion.note }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                    <div class="stat-opinion-mark">
+                        {{ opinion.mark }}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        <div class="stat-actions-container">
+            <button onclick="UpdateStatistics()">Обновить</button>
+        </div>
+    </div>
+
+    </div>
+{% endblock %}

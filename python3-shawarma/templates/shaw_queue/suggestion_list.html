@@ -1,0 +1,7 @@
+<ul id="dropdown-list" class="live-search-list">
+{% for comment in comments %}
+    <li class="live-search-list-item" onclick="SelectSuggestion({{ id }}, '{{ comment.note }}')">
+    {{ comment.note }}
+    </li>
+{% endfor %}
+</ul>

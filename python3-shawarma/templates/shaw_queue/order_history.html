@@ -1,0 +1,19 @@
+{% extends 'shaw_queue/base.html' %}
+{% block aditional_static %}
+    {% load static %}
+    <script type="text/javascript" src="{% static 'js/order_history_handlers.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <input id="urls" hidden data-close-order-url="{% url 'close_order' %}"
+           data-cancel-order-url="{% url 'cancel_order' %}" voice-all-url="{% url 'voice_all' %}"
+           >
+    <div class="open-orders">
+        {% for open_order in open_orders %}
+            {% include 'shaw_queue/open_order_block.html' with open_order=open_order %}
+        {% empty %}
+            <div>
+                Нет заказов.
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% csrf_token %}
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
+<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/base_handlers.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/evaluation_handlers.js' %}"></script>
+    <input hidden id="urls" data-evaluate-url="{% url 'evaluate' %}">
+<div class="evaluation-order-number-block">
+    <input id="order-number-input" class="evaluation-order-number-input" type="text" placeholder="Введите номер вашего заказа">
+</div>
+<div class="marks-block">
+    <div class="mark-block" id="mark-1" onclick="enlight('1')">
+        1
+    </div>
+    <div class="mark-block" id="mark-2" onclick="enlight('2')">
+        2
+    </div>
+    <div class="mark-block" id="mark-3" onclick="enlight('3')">
+        3
+    </div>
+    <div class="mark-block" id="mark-4" onclick="enlight('4')">
+        4
+    </div>
+    <div class="mark-block" id="mark-5" onclick="enlight('5')">
+        5
+    </div>
+</div>
+<div class="evaluation-note-block">
+    <textarea id="note" class="evaluation-note-textarea" placeholder="Комментарий...">
+
+    </textarea>
+    <div class="evaluate-button" onclick="Evaluate()">
+        Оценить
+    </div>
+</div>

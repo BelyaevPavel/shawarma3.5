@@ -1,0 +1,5 @@
+{% for cooks_order in cooks_orders %}
+    {% include 'shaw_queue/cook_order_block.html' with cooks_order=cooks_order %}
+{% empty %}
+    Ваша очередь заказов пуста.
+{% endfor %}

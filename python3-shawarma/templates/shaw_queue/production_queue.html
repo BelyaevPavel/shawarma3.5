@@ -1,0 +1,32 @@
+{% extends 'shaw_queue/base.html' %}
+{% block content %}
+    <div>
+        <table class="currentOrderTable" id="free-items" data-take-url="{% url 'take' %}"
+               data-grill-url="{% url 'to_grill' %}" data-finish-url="{% url 'finish_cooking' %}">
+            <thead>
+            <tr>
+                <td class="currentOrderTitleCell">
+                    Заказ
+                </td>
+                <td class="currentOrderTitleCell">
+                    Наименование
+                </td>
+                <td class="currentOrderTitleCell">
+                    Комментарий
+                </td>
+                <td class="currentOrderTitleCell">
+                    Повар
+                </td>
+                <td class="currentOrderActionCell">
+                    Действия
+                </td>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in free_content %}
+                {% include 'shaw_queue/order_item.html' with item=item %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

@@ -1,0 +1,22 @@
+<tr class="currentOrderRow {% if item.order.is_grilling %}inGrill{% endif %}
+        {% if item.finish_timestamp %} ready{% endif %}" index="{{ item.id }}">
+    <td class="currentOrderTitleCell">
+        № {{ item.order.daily_number }}
+    </td>
+    <td class="currentOrderTitleCell">
+        {{ item.menu_item }}
+    </td>
+    <td class="currentOrderTitleCell">
+        {{ item.note }}
+    </td>
+    <td class="currentOrderTitleCell">
+        {{ item.order.prepared_by }}
+    </td>
+    <td class="currentOrderActionCell">
+        <button class="btnTake" onclick="Take({{ item.id }})" {% if item.staff_maker_id %}disabled{% endif %}>
+            Take
+        </button>
+        <button class="btnGrill" onclick="ToGrill({{ item.id }})" {% if item.is_in_grill %}disabled{% endif %}>Grill</button>
+        <button class="btnFinish" onclick="FinishCooking({{ item.id }})" {% if item.finish_timestamp %}disabled{% endif %}>Finish</button>
+    </td>
+</tr>

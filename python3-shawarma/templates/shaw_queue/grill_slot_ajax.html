@@ -1,0 +1,19 @@
+{% for item in in_grill %}
+    <div class="in-grill-slot-container">
+        <div class="in-grill-slot" id="slot{{ forloop.counter }}" index="{{ item.product.id }}"
+             onclick="FinishItemCooking({{ item.product.id }})">
+            <div class="grill-title-container">
+                <span class="grill-title">№{{ item.product.order.daily_number }} {{ item.product.menu_item.title }}</span>
+            </div>
+            <div class="grill-timer-container">
+                 <span class="grill-timer">{{ item.time }}</span>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <div class="in-grill-slot-container">
+        <div class="in-grill-slot">
+            Пусто
+        </div>
+    </div>
+{% endfor %}

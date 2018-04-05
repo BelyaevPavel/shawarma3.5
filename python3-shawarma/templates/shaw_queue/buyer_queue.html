@@ -1,0 +1,155 @@
+{% csrf_token %}
+{% load static %}
+<title>Очередь покупателей</title>
+<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
+<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/buyer_queue_handlers.js' %}"></script>
+<input hidden id="urls" data-refresh-url="{% url 'buyer_queue_ajax' %}" data-unvoice-url="{% url 'unvoice_order' %}">
+<div class="company-emblem">
+    <img id="shawarma-header" src="{% static 'img/shawarma_tv.png' %}" >
+</div>
+<div id="page-content">
+    <div class="open-orders-container">
+        <div class="open-order-display">
+            Заказы в работе
+        </div>
+    {% for open_order in display_open_orders %}
+        <div class="open-order-display">
+            {{ open_order.daily_number }}
+        </div>
+    {% empty %}
+    {% endfor %}
+    </div>
+    <div class="ready-orders-container">
+    <div class="open-order-display">
+        Заказы на выдачу
+    </div>
+    {% for ready_order in display_ready_orders %}
+        <div class="ready-order-display">
+            <span class="ready-order-display-number">
+                {{ ready_order.daily_number }}
+            </span>
+            {{ ready_order.servery }}
+        </div>
+    {% empty %}
+    {% endfor %}
+    </div>
+</div>
+
+<audio controls id="speaker-0">
+    <source src="{% static 'audio/0.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-1">
+    <source src="{% static 'audio/1.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-2">
+    <source src="{% static 'audio/2.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-3">
+    <source src="{% static 'audio/3.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-4">
+    <source src="{% static 'audio/4.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-5">
+    <source src="{% static 'audio/5.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-6">
+    <source src="{% static 'audio/6.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-7">
+    <source src="{% static 'audio/7.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-8">
+    <source src="{% static 'audio/8.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-9">
+    <source src="{% static 'audio/9.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-10">
+    <source src="{% static 'audio/10.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-11">
+    <source src="{% static 'audio/11.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-12">
+    <source src="{% static 'audio/12.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-13">
+    <source src="{% static 'audio/13.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-14">
+    <source src="{% static 'audio/14.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-15">
+    <source src="{% static 'audio/15.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-16">
+    <source src="{% static 'audio/16.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-17">
+    <source src="{% static 'audio/17.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-18">
+    <source src="{% static 'audio/18.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-19">
+    <source src="{% static 'audio/19.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-20">
+    <source src="{% static 'audio/20.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-30">
+    <source src="{% static 'audio/30.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-40">
+    <source src="{% static 'audio/40.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-50">
+    <source src="{% static 'audio/50.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-60">
+    <source src="{% static 'audio/60.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-70">
+    <source src="{% static 'audio/70.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-80">
+    <source src="{% static 'audio/80.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-90">
+    <source src="{% static 'audio/90.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-100">
+    <source src="{% static 'audio/100.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-200">
+    <source src="{% static 'audio/200.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-300">
+    <source src="{% static 'audio/300.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-400">
+    <source src="{% static 'audio/400.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-500">
+    <source src="{% static 'audio/500.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-600">
+    <source src="{% static 'audio/600.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-700">
+    <source src="{% static 'audio/700.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-800">
+    <source src="{% static 'audio/800.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-900">
+    <source src="{% static 'audio/900.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-order">
+    <source src="{% static 'audio/order.opus' %}" type="audio/ogg">
+</audio>
+<audio controls id="speaker-number">
+    <source src="{% static 'audio/number.opus' %}" type="audio/ogg">
+</audio>

@@ -1,0 +1,73 @@
+{% load static %}
+<div class="order-block-container">
+    <div class="order-block {% if not open_order.printed and open_order.cook_part_ready_count.count > 0 %}
+    order-started
+    {% else %}
+    shadowed
+    {% endif %}
+    {% if not open_order.order.is_paid %}unpaid{% endif %}">
+        <div class="order-block-header">
+            <div class="order-number    {% if open_order.order.content_completed and open_order.order.shashlyk_completed %}
+                                                ready
+                                        {% else %}
+                                            {% if open_order.order.is_grilling or open_order.order.is_grilling_shash %}
+                                                inGrill
+                                            {% endif %}
+                                        {% endif %}">
+                <a href="{% url 'order_content' open_order.order.id %}">№ {{ open_order.order.daily_number }}</a>
+            </div>
+            <div class="order-cook-part {% if open_order.order.content_completed and open_order.order.shashlyk_completed %}
+                                                ready
+                                        {% else %}
+                                            {% if open_order.order.is_grilling or open_order.order.is_grilling_shash %}
+                                                inGrill
+                                            {% endif %}
+                                        {% endif %}">
+                <a href="{% url 'order_content' open_order.order.id %}">{{ open_order.order.prepared_by.user.first_name }} ({{ open_order.cook_part_ready_count.count }}/{{ open_order.cook_part_count.count }})</a>
+            </div>
+            <div class="order-block-actions">
+                {% if staff_category.title == 'Operator' %}
+                    <button {% if not open_order.order.content_completed or not open_order.order.shashlyk_completed or not open_order.order.supplement_completed %}
+                                disabled
+                            {% endif %}
+                            onclick="CloseOrder({{ open_order.order.id }})">
+                        Закрыть
+                    </button>
+                    <button onclick="PrintOrder({{ open_order.order.id }})">
+                        <img src="{% static "img/printing-text24.png" %}">
+                    </button>
+                    {% if open_order.order.is_ready %}
+                        <button onclick="VoiceOrder('{% url 'voice_order' open_order.order.id  %}')">
+                            <img src="{% static "img/voice-icon.png" %}">
+                        </button>
+                    {% endif %}
+                {% endif %}
+                {% if staff_category.title == 'Cashier' %}
+                    <button onclick="CancelOrder({{ open_order.order.id }})">
+                        Отменить
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="order-operator-part">
+            <a href="{% url 'order_content' order_id=open_order.order.id %}">
+                {% for oper_content in open_order.operator_part %}
+                    <div class="order-item">
+                        {{ oper_content.menu_item.title }}
+                    </div>
+                {% empty %}
+                    <p>Нет доп. товаров.</p>
+                {% endfor %}
+            </a>
+        </div>
+        <div class="order-total">
+            <div class="servery-title">
+                {{ open_order.order.servery }}
+            </div>
+            <div class="order-total-text">
+                Итого: {{ open_order.order.total }}
+            </div>
+        </div>
+    </div>
+</div>

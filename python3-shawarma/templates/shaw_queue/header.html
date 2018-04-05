@@ -1,0 +1,55 @@
+{% load static %}
+<script type="text/javascript" src="{% static 'js/header_handlers.js' %}"></script>
+
+<input hidden id="header-urls" logout-url="{% url 'logout_link' %}">
+
+<div class="header-div-container fixed">
+    <div class="header-div">
+        {% if staff_category.title == 'Cashier' %}
+            <a href="{% url 'menu' %}">
+                <div class="header-buttons" id="menu">
+                        Меню
+                </div>
+            </a>
+        {% endif %}
+        {% if staff_category.title == 'Cashier' or staff_category.title == 'Operator' %}
+            <a href="{% url 'current_queue' %}">
+                <div class="header-buttons" id="current-queue">
+                        Очередь заказов
+                </div>
+            </a>
+        {% endif %}
+        {% if staff_category.title == 'Operator' %}
+            <a href="{% url 'production_queue' %}">
+                <div class="header-buttons" id="production">
+                        Производство
+                </div>
+            </a>
+            <a href="{% url 'order_history' %}">
+                <div class="header-buttons" id="order-history">
+                        История заказов
+                </div>
+            </a>
+        {% endif %}
+        {% if staff_category.title == 'Cook' %}
+            <a href="{% url 'cook_interface' %}">
+                <div class="header-buttons" id="cook_interface">
+                        Интерфейс Повара
+                </div>
+            </a>
+        {% endif %}
+        {% if staff_category.title == 'Shashlychnik' %}
+            <a href="{% url 'shashlychnik_interface' %}">
+                <div class="header-buttons" id="shashlychnik_interface">
+                        Интерфейс Шашлычника
+                </div>
+            </a>
+        {% endif %}
+        <div class="header-who-logged" id="header-who-logged">
+            {{ user.first_name }} {{ user.last_name }}
+        </div>
+            <div class="header-buttons" id="logout" onclick="logout()">
+                    Выход
+            </div>
+    </div>
+</div>

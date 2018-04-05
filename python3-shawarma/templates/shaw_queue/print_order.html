@@ -1,0 +1,12 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'queue/style.css' %}">
+<script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/order_print_handlers.js' %}"></script>
+
+№{{ order_info.daily_number }} {{ order_info.open_time }}
+{% for item in order_content %}
+    <div>
+    {{ item.menu_item__title }} x{{ item.count }} {{ item.menu_item__price }}
+    </div>
+{% endfor %}
+Итого: {{ order_info.total }}
